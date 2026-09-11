@@ -36,7 +36,7 @@ const corsOptions = {
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error("Not allowed by CORS"));
+      callback(null, false);
     }
   },
   credentials: true,
@@ -55,6 +55,7 @@ const limiter = rateLimit({
   message: { success: false, message: "Too many requests, please try again later." }
 });
 app.use("/api/auth/login", rateLimit({ windowMs: 15 * 60 * 1000, max: 30, message: { success: false, message: "Too many login attempts. Try again later." } }));
+app.use("/api/auth/register", rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: { success: false, message: "Too many registration attempts. Try again later." } }));
 app.use("/api", limiter);
 
 app.get("/api/health", (_req, res) => {

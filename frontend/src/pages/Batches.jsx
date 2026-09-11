@@ -109,7 +109,7 @@ export default function Batches() {
                         </span>
                         <span className="font-semibold text-slate-700">{fill}%</span>
                       </div>
-                      <ProgressBar value={fill} variant={capColor} />
+                      <ProgressBar value={fill} color={capColor} />
                     </div>
 
                     <div className="grid grid-cols-2 gap-2.5 mt-4">

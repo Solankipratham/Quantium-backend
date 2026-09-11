@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Pencil, Trash2, CreditCard, MessageCircle, FileDown, Send, Calendar, Phone, BookOpen, GraduationCap } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, CreditCard, MessageCircle, FileDown, Send, Calendar, Phone, BookOpen, GraduationCap, User } from "lucide-react";
 import { api, formatINR, formatDate } from "../api/client.js";
 import { Card, Button, LoadingState, EmptyState, Badge, Input, Select, Label, Textarea, Modal, PageHeader, Avatar, ProgressBar, Tabs, StatCard } from "../components/ui.jsx";
 import FeeStatusBadge from "../components/FeeStatusBadge.jsx";

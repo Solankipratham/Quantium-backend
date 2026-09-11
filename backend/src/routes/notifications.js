@@ -15,20 +15,20 @@ router.get("/", async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.put("/:id/read", async (req, res, next) => {
-  try {
-    const store = await getStore();
-    await store.model("Notification").updateById(req.params.id, { read: true });
-    res.json({ message: "Marked as read." });
-  } catch (e) { next(e); }
-});
-
 router.put("/read-all", async (_req, res, next) => {
   try {
     const store = await getStore();
     const list = await store.model("Notification").find({ read: false }, null);
     for (const n of list) await store.model("Notification").updateById(n.id, { read: true });
     res.json({ message: "All notifications marked as read." });
+  } catch (e) { next(e); }
+});
+
+router.put("/:id/read", async (req, res, next) => {
+  try {
+    const store = await getStore();
+    await store.model("Notification").updateById(req.params.id, { read: true });
+    res.json({ message: "Marked as read." });
   } catch (e) { next(e); }
 });
 

@@ -78,7 +78,7 @@ router.post("/register", async (req, res, next) => {
         options: {
           data: {
             full_name: body.name,
-            role: body.role || "admin"
+            role: "admin"
           }
         }
       });
@@ -88,12 +88,12 @@ router.post("/register", async (req, res, next) => {
       if (data.user && !data.session) {
         return res.status(201).json({
           message: "Registration successful. Please check your email to verify your account.",
-          user: { id: data.user.id, name: body.name, email: body.email, role: body.role || "admin" }
+          user: { id: data.user.id, name: body.name, email: body.email, role: "admin" }
         });
       }
       const store = await getStore();
       const profile = await store.model("User").findById(data.user.id);
-      const user = profile || { id: data.user.id, name: body.name, email: body.email, role: body.role || "admin" };
+      const user = profile || { id: data.user.id, name: body.name, email: body.email, role: "admin" };
       return res.status(201).json({ token: data.session?.access_token, user });
     }
 
@@ -107,7 +107,7 @@ router.post("/register", async (req, res, next) => {
       email: String(body.email).toLowerCase(),
       username: body.username || String(body.email).split("@")[0],
       password: hash,
-      role: body.role || "ADMIN",
+      role: "ADMIN",
       phone: body.phone || ""
     });
     const token = signToken(user);
@@ -124,6 +124,7 @@ router.get("/me", authRequired, async (req, res) => {
 router.post("/change-password", authRequired, async (req, res, next) => {
   try {
     const { currentPassword, newPassword } = req.body;
+    if (!currentPassword) return res.status(422).json({ message: "Current password is required." });
     if (!newPassword || newPassword.length < 6) return res.status(422).json({ message: "New password must be at least 6 characters." });
 
     // If Supabase is configured
@@ -142,10 +143,8 @@ router.post("/change-password", authRequired, async (req, res, next) => {
     const store = await getStore();
     const user = await store.model("User").findById(req.userId);
     if (!user) return res.status(404).json({ message: "User not found." });
-    if (currentPassword) {
-      const ok = await bcrypt.compare(String(currentPassword), user.password);
-      if (!ok) return res.status(401).json({ message: "Current password is incorrect." });
-    }
+    const ok = await bcrypt.compare(String(currentPassword), user.password);
+    if (!ok) return res.status(401).json({ message: "Current password is incorrect." });
     const hash = await bcrypt.hash(String(newPassword), 10);
     await store.model("User").updateById(req.userId, { password: hash });
     await writeAuditLog({ user: req.user, action: "Changed password", entity: "Auth", ip: req.ip });

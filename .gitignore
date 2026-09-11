@@ -2,5 +2,12 @@ node_modules/
 data/quantum-store.json
 data/.driver
 .env
+.env.local
+.env.production
+.env.staging
 dist/
 *.log
+*.bak
+syntax-check.mjs
+test-server.mjs
+test-verify.mjs

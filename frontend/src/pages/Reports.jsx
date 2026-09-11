@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { api, formatINR } from "../api/client.js";
 import { Card, Button, StatCard, Badge, PageHeader, LoadingState } from "../components/ui.jsx";
 import { BarChart } from "../components/Charts.jsx";
-import { Download, Printer, FileText, Users, IndianRupee, TrendingUp, AlertCircle } from "lucide-react";
+import { Download, Printer, FileText, Users, IndianRupee, TrendingUp, AlertCircle, BarChart3 } from "lucide-react";
 
 function toCSV(rows, headers) {
   const head = headers.join(",");
@@ -105,7 +105,7 @@ export default function Reports() {
         </Card>
         <Card className="p-0 w-full min-w-0 overflow-hidden">
           <div className="flex items-center gap-3 px-5 sm:px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-purple-50 to-violet-50">
-            <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center"><BarChart className="w-4 h-4" /></div>
+            <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center"><BarChart3 className="w-4 h-4" /></div>
             <div className="text-sm font-semibold text-slate-900">Payment Methods</div>
           </div>
           <div className="p-5 sm:p-6">
@@ -178,7 +178,7 @@ export default function Reports() {
 
       <Card className="p-0 w-full min-w-0 overflow-hidden">
         <div className="flex items-center gap-3 px-5 sm:px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-info-50 to-cyan-50">
-          <div className="w-9 h-9 rounded-xl bg-info-100 text-info-600 flex items-center justify-center"><BarChart className="w-4 h-4" /></div>
+          <div className="w-9 h-9 rounded-xl bg-info-100 text-info-600 flex items-center justify-center"><BarChart3 className="w-4 h-4" /></div>
           <div className="text-sm font-semibold text-slate-900">Collection — Monthly</div>
         </div>
         <div className="p-5 sm:p-6">
