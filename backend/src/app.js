@@ -31,15 +31,17 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(null, false);
+      callback(new Error(`Origin ${origin} not allowed by CORS`));
     }
   },
   credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  exposedHeaders: ["Content-Length"],
+  maxAge: 86400,
 };
 
 app.use(helmet());
