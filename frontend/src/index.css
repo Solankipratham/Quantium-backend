@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* { -webkit-font-smoothing: antialiased; }
+html { scroll-behavior: smooth; }
+body { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+
+/* print */
+@media print {
+  .no-print { display: none !important; }
+  body { background: white !important; }
+}
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-thumb { background: #A3A3A3; border-radius: 999px; }
+::-webkit-scrollbar-track { background: #F5F5F5; }
