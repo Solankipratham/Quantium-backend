@@ -1,11 +1,11 @@
 import { Router } from "express";
 import { getStore } from "../data/store.js";
-import { authRequired } from "../middleware/auth.js";
+import { authRequired, authorize } from "../middleware/auth.js";
 import { studentReport, feeReport, collectionReport, batchReport, paymentMethodReport } from "../services/reportsService.js";
 import { toDate } from "../services/dates.js";
 
 const router = Router();
-router.use(authRequired);
+router.use(authRequired, authorize("ADMIN"));
 
 router.get("/students", async (_req, res, next) => {
   try { res.json(await studentReport()); } catch (e) { next(e); }

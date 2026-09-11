@@ -10,19 +10,24 @@ let driver = null;
 function hasSupabase() {
   const url = process.env.SUPABASE_URL || "";
   const key = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY || "";
-  return url && key && !url.includes("your-project") && !String(key).includes("YOUR_");
+  return url && key && !url.includes("your-project") && !String(key).includes("YOUR_") && String(key).length > 20;
 }
 
 export async function chooseDriver() {
   if (driver) return driver;
   if (hasSupabase()) {
     try {
-      const { isSupabaseConfigured } = await import("../lib/supabase.js");
+      const { isSupabaseConfigured, getSupabaseInitError } = await import("../lib/supabase.js");
       if (isSupabaseConfigured()) {
-        driver = "supabase";
-        try { fs.writeFileSync(useCacheFile, "supabase"); } catch {}
-        console.log("[quantum] using Supabase PostgreSQL");
-        return driver;
+        const initErr = getSupabaseInitError();
+        if (initErr) {
+          console.warn("[supabase] init error, falling back to fileStore:", initErr);
+        } else {
+          driver = "supabase";
+          try { fs.writeFileSync(useCacheFile, "supabase"); } catch {}
+          console.log("[quantum] using Supabase PostgreSQL");
+          return driver;
+        }
       }
     } catch (e) {
       console.warn("[supabase] init failed, falling back to fileStore:", e.message);

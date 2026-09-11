@@ -1,0 +1,6 @@
+node_modules/
+data/quantum-store.json
+data/.driver
+.env
+dist/
+*.log

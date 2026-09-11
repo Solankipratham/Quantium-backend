@@ -7,8 +7,13 @@ const anonKey = process.env.SUPABASE_ANON_KEY;
 let supabaseAdmin = null;
 let supabaseAnon = null;
 let isConfigured = false;
+let _initError = null;
 
-if (url && (serviceKey || anonKey)) {
+function isValidKey(key) {
+  return key && !String(key).includes("YOUR_") && String(key).length > 20;
+}
+
+if (url && isValidKey(serviceKey) || isValidKey(anonKey)) {
   try {
     if (serviceKey) {
       supabaseAdmin = createClient(url, serviceKey, {
@@ -21,8 +26,9 @@ if (url && (serviceKey || anonKey)) {
       });
     }
     isConfigured = true;
-    console.log("[supabase] connected to", url);
+    console.log("[supabase] configured");
   } catch (e) {
+    _initError = e.message;
     console.warn("[supabase] failed to init:", e.message);
   }
 } else {
@@ -33,4 +39,5 @@ export function getSupabase() { return supabaseAdmin || supabaseAnon; }
 export function getSupabaseAdmin() { return supabaseAdmin; }
 export function getSupabaseAnon() { return supabaseAnon; }
 export function isSupabaseConfigured() { return isConfigured; }
+export function getSupabaseInitError() { return _initError; }
 export default supabaseAdmin || supabaseAnon;

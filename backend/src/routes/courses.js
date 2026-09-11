@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { getStore } from "../data/store.js";
-import { authRequired } from "../middleware/auth.js";
+import { authRequired, authorize } from "../middleware/auth.js";
 import { sanitize } from "../middleware/validate.js";
 import { writeAuditLog } from "../services/activity.js";
 
@@ -18,7 +18,7 @@ router.get("/", async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.post("/", async (req, res, next) => {
+router.post("/", authorize("ADMIN"), async (req, res, next) => {
   try {
     const body = sanitize(req.body);
     if (!body.name && !body.course) return res.status(422).json({ message: "Course name is required." });
@@ -37,7 +37,7 @@ router.post("/", async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.put("/:id", async (req, res, next) => {
+router.put("/:id", authorize("ADMIN"), async (req, res, next) => {
   try {
     const body = sanitize(req.body);
     const store = await getStore();
@@ -53,7 +53,7 @@ router.put("/:id", async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.delete("/:id", async (req, res, next) => {
+router.delete("/:id", authorize("ADMIN"), async (req, res, next) => {
   try {
     const store = await getStore();
     await store.model("FeePlan").deleteById(req.params.id);

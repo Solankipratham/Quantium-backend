@@ -1,9 +1,9 @@
 import { Router } from "express";
 import { getStore } from "../data/store.js";
-import { authRequired } from "../middleware/auth.js";
+import { authRequired, authorize } from "../middleware/auth.js";
 
 const router = Router();
-router.use(authRequired);
+router.use(authRequired, authorize("ADMIN"));
 
 router.get("/", async (req, res, next) => {
   try {

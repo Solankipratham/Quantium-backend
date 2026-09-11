@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { getStore } from "../data/store.js";
-import { authRequired } from "../middleware/auth.js";
+import { authRequired, authorize } from "../middleware/auth.js";
 import { sanitize, validatePayment } from "../middleware/validate.js";
 import { recordPayment, editPayment, deletePayment } from "../services/paymentService.js";
 import { toDate } from "../services/dates.js";
@@ -24,7 +24,7 @@ router.get("/", async (req, res, next) => {
 });
 
 // POST /api/payments
-router.post("/", async (req, res, next) => {
+router.post("/", authorize("ADMIN"), async (req, res, next) => {
   try {
     const body = sanitize(req.body);
     const store = await getStore();
@@ -38,7 +38,7 @@ router.post("/", async (req, res, next) => {
 });
 
 // PUT /api/payments/:id
-router.put("/:id", async (req, res, next) => {
+router.put("/:id", authorize("ADMIN"), async (req, res, next) => {
   try {
     const body = sanitize(req.body);
     const updated = await editPayment(req.params.id, body, req.user, req.ip);
@@ -47,7 +47,7 @@ router.put("/:id", async (req, res, next) => {
 });
 
 // DELETE /api/payments/:id
-router.delete("/:id", async (req, res, next) => {
+router.delete("/:id", authorize("ADMIN"), async (req, res, next) => {
   try {
     const deleted = await deletePayment(req.params.id, req.user, req.ip);
     res.json({ message: "Payment deleted.", payment: deleted });

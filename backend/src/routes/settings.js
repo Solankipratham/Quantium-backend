@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authRequired } from "../middleware/auth.js";
+import { authRequired, authorize } from "../middleware/auth.js";
 import { sanitize } from "../middleware/validate.js";
 import { getSettings, saveSettings } from "../services/settingsService.js";
 import { getStore } from "../data/store.js";
@@ -14,7 +14,7 @@ router.get("/", async (_req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.put("/", async (req, res, next) => {
+router.put("/", authorize("ADMIN"), async (req, res, next) => {
   try {
     const body = sanitize(req.body);
     const settings = await saveSettings(body);
@@ -23,7 +23,7 @@ router.put("/", async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.put("/receipt-counter", async (req, res, next) => {
+router.put("/receipt-counter", authorize("ADMIN"), async (req, res, next) => {
   try {
     const { value } = sanitize(req.body);
     const store = await getStore();

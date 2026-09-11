@@ -1,5 +1,4 @@
 import "dotenv/config";
-import express from "express";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
@@ -13,10 +12,8 @@ async function start() {
   const driver = await chooseDriver();
   const { default: app } = await import("./app.js");
 
-  // Serve production frontend build if present (must be mounted before the 404 handler in app.js)
   const distPath = path.join(__dirname, "..", "frontend", "dist");
   if (fs.existsSync(distPath)) {
-    // app.js already added notFound + errorHandler as the last two layers — pop them, insert static, then re-add.
     const stack = app._router?.stack || [];
     const maybeError = stack.length >= 2 ? stack.slice(-2) : [];
     if (maybeError.length === 2) stack.splice(-2, 2);

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { getStore } from "../data/store.js";
-import { authRequired } from "../middleware/auth.js";
+import { authRequired, authorize } from "../middleware/auth.js";
 import { sanitize } from "../middleware/validate.js";
 import { listEnriched } from "../services/studentService.js";
 import { writeAuditLog } from "../services/activity.js";
@@ -17,7 +17,7 @@ router.get("/plans", async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.post("/plans", async (req, res, next) => {
+router.post("/plans", authorize("ADMIN"), async (req, res, next) => {
   try {
     const body = sanitize(req.body);
     if (!body.course) return res.status(422).json({ message: "Course is required." });
@@ -36,7 +36,7 @@ router.post("/plans", async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.put("/plans/:id", async (req, res, next) => {
+router.put("/plans/:id", authorize("ADMIN"), async (req, res, next) => {
   try {
     const body = sanitize(req.body);
     const store = await getStore();
@@ -55,7 +55,7 @@ router.put("/plans/:id", async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.delete("/plans/:id", async (req, res, next) => {
+router.delete("/plans/:id", authorize("ADMIN"), async (req, res, next) => {
   try {
     const store = await getStore();
     await store.model("FeePlan").deleteById(req.params.id);

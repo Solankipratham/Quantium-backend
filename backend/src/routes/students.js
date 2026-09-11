@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { getStore } from "../data/store.js";
-import { authRequired } from "../middleware/auth.js";
+import { authRequired, authorize } from "../middleware/auth.js";
 import { sanitize, validateStudent } from "../middleware/validate.js";
 import { enrichStudent, listEnriched, finalFeeFromInput } from "../services/studentService.js";
 import { writeAuditLog, pushNotification } from "../services/activity.js";
@@ -116,7 +116,7 @@ router.get("/:id", async (req, res, next) => {
 });
 
 // POST /api/students
-router.post("/", async (req, res, next) => {
+router.post("/", authorize("ADMIN"), async (req, res, next) => {
   try {
     const body = sanitize(req.body);
     const errors = validateStudent(body);
@@ -180,7 +180,7 @@ router.post("/", async (req, res, next) => {
 });
 
 // PUT /api/students/:id
-router.put("/:id", async (req, res, next) => {
+router.put("/:id", authorize("ADMIN"), async (req, res, next) => {
   try {
     const body = sanitize(req.body);
     const errors = validateStudent(body);
@@ -223,7 +223,7 @@ router.put("/:id", async (req, res, next) => {
 });
 
 // DELETE /api/students/:id — soft delete (move to recycle bin)
-router.delete("/:id", async (req, res, next) => {
+router.delete("/:id", authorize("ADMIN"), async (req, res, next) => {
   try {
     const store = await getStore();
     const student = await store.model("Student").findById(req.params.id);

@@ -1,7 +1,6 @@
-import { getSupabase, isSupabaseConfigured } from "../lib/supabase.js";
+import { getSupabase, isSupabaseConfigured, getSupabaseInitError } from "../lib/supabase.js";
 import fileStore from "./fileStore.js";
 
-// ── Table mapping (legacy model name → Supabase table) ──────────────
 const tableMap = {
   User: "profiles",
   Student: "students",
@@ -15,9 +14,7 @@ const tableMap = {
   MonthlyFee: "monthly_fees",
 };
 
-// ── Field mapping: legacy field → Supabase column ────────────────────
 const fieldMap = {
-  // Student
   studentId: "student_code",
   name: "full_name",
   parentName: "guardian_name",
@@ -42,8 +39,6 @@ const fieldMap = {
   deletedAt: "deleted_at",
   deletedBy: "deleted_by",
   isDeleted: "is_deleted",
-
-  // Payment
   studentName: "student_name",
   amount: "amount",
   date: "payment_date",
@@ -52,48 +47,36 @@ const fieldMap = {
   receiptNumber: "receipt_number",
   recordedBy: "created_by",
   paymentId: "transaction_id",
-
-  // Batch
   course: "course_name",
   teacher: "faculty_name",
   startTime: "start_time",
   endTime: "end_time",
   active: "status",
   days: "days",
-
-  // FeePlan / Course
   course: "name",
   yearlyFee: "yearly_fee",
   quarterlyFee: "quarterly_fee",
   halfYearlyFee: "half_yearly_fee",
   admissionFee: "admission_fee",
-
-  // AuditLog
   userId: "user_id",
   userName: "user_name",
   entity: "entity_type",
   entityId: "entity_id",
   ip: "ip",
-
-  // Notification
   type: "type",
   title: "title",
   message: "message",
   isRead: "is_read",
-
-  // Setting
   key: "key",
   value: "value",
 };
 
-// Fields that should NOT be sent to Supabase (computed / not columns)
 const ignoreFields = new Set(["paid", "pending", "status", "daysOverdue", "nextDueDate", "lastPayment", "monthlyRecords", "currentMonth", "studentName", "studentCourse", "studentBatch"]);
 
 const reverseFieldMap = Object.fromEntries(
   Object.entries(fieldMap).map(([k, v]) => [v, k])
 );
 
-// ── Convert legacy fields → Supabase columns ─────────────────────────
 const modelFieldMap = {
   Student: {
     studentId: "student_code",
@@ -172,32 +155,18 @@ function toSupabaseRow(model, data) {
     const col = columnFor(model, k);
     out[col] = v;
   }
-  // Fix: Payment studentId → student_id (not student_code)
   if (model === "Payment" && data.studentId) {
     out.student_id = data.studentId;
     delete out.student_code;
   }
-  // Fix: Student studentId → student_code
   if (model === "Student" && data.studentId) {
     out.student_code = data.studentId;
   }
-  // Fix: Batch course → store as course_name, also resolve course_id if it looks like a UUID
   if (model === "Batch") {
-    if (data.course !== undefined) {
-      out.course_name = data.course;
-      delete out.course;
-    }
-    if (data.teacher !== undefined) {
-      out.faculty_name = data.teacher;
-      delete out.teacher;
-    }
-    // Map active boolean to status
-    if (data.active !== undefined) {
-      out.status = data.active ? "active" : "inactive";
-      delete out.active;
-    }
+    if (data.course !== undefined) { out.course_name = data.course; delete out.course; }
+    if (data.teacher !== undefined) { out.faculty_name = data.teacher; delete out.teacher; }
+    if (data.active !== undefined) { out.status = data.active ? "active" : "inactive"; delete out.active; }
   }
-  // Fix: FeePlan → courses table
   if (model === "FeePlan") {
     if (data.course !== undefined) { out.name = data.course; delete out.course; }
     if (data.monthlyFee !== undefined) { out.monthly_fee = data.monthlyFee; delete out.monthlyFee; }
@@ -207,14 +176,12 @@ function toSupabaseRow(model, data) {
     if (data.admissionFee !== undefined) { out.admission_fee = data.admissionFee; delete out.admissionFee; }
     if (data.courseFee !== undefined) { out.course_fee = data.courseFee; delete out.courseFee; }
   }
-  // Fix: User → profiles (no password, no username, no active)
   if (model === "User") {
     if (data.name !== undefined) { out.full_name = data.name; delete out.name; }
     delete out.password;
     delete out.username;
     delete out.active;
   }
-  // Student finalFee computation
   if (model === "Student" && data.totalFee !== undefined) {
     const total = Number(data.totalFee) || 0;
     const discount = Number(data.discount) || 0;
@@ -226,19 +193,16 @@ function toSupabaseRow(model, data) {
   return out;
 }
 
-// ── Convert Supabase columns → legacy fields ─────────────────────────
 function fromSupabaseRow(model, row) {
   if (!row) return null;
   const out = { ...row };
 
-  // Reverse-map known Supabase columns back to legacy names
   for (const [supa, legacy] of Object.entries(reverseFieldMap)) {
     if (supa in out && !(legacy in out)) {
       out[legacy] = out[supa];
     }
   }
 
-  // Student specific
   if (model === "Student") {
     out.id = row.id;
     if (row.student_code) out.studentId = row.student_code;
@@ -263,7 +227,6 @@ function fromSupabaseRow(model, row) {
     if (row.subject) out.subject = row.subject;
   }
 
-  // Payment specific
   if (model === "Payment") {
     out.id = row.id;
     if (row.student_id) out.studentId = row.student_id;
@@ -275,7 +238,6 @@ function fromSupabaseRow(model, row) {
     if (row.transaction_id) out.paymentId = row.transaction_id;
   }
 
-  // Batch specific
   if (model === "Batch") {
     if (row.faculty_name) out.teacher = row.faculty_name;
     if (row.start_time) out.startTime = row.start_time;
@@ -290,7 +252,6 @@ function fromSupabaseRow(model, row) {
     out.active = row.status === "active";
   }
 
-  // FeePlan/Course specific
   if (model === "FeePlan") {
     if (row.name) out.course = row.name;
     if (row.monthly_fee) out.monthlyFee = Number(row.monthly_fee);
@@ -301,13 +262,11 @@ function fromSupabaseRow(model, row) {
     if (row.course_fee) out.courseFee = Number(row.course_fee);
   }
 
-  // User/Profile specific
   if (model === "User") {
     if (row.full_name) out.name = row.full_name;
     out.active = true;
   }
 
-  // AuditLog specific
   if (model === "AuditLog") {
     if (row.user_id) out.userId = row.user_id;
     if (row.user_name) out.userName = row.user_name;
@@ -315,7 +274,6 @@ function fromSupabaseRow(model, row) {
     if (row.entity_id) out.entityId = row.entity_id;
   }
 
-  // Notification specific
   if (model === "Notification") {
     if (row.is_read !== undefined) out.isRead = row.is_read;
   }
@@ -323,37 +281,34 @@ function fromSupabaseRow(model, row) {
   return out;
 }
 
-// ── Determine if model should use Supabase ────────────────────────────
-function useSupabaseFor(model) {
-  if (!isSupabaseConfigured()) return false;
-  const supaTable = tableMap[model];
-  const supaTables = ["students", "batches", "courses", "monthly_fees", "payments", "profiles", "audit_logs", "notifications", "fee_settings", "student_notes", "student_documents"];
-  return supaTables.includes(supaTable);
+let _fallbackToFilestore = false;
+
+function getSb() {
+  if (_fallbackToFilestore) return null;
+  const sb = getSupabase();
+  if (!sb) { _fallbackToFilestore = true; return null; }
+  return sb;
 }
 
-// ── Store interface ───────────────────────────────────────────────────
-const store = {
-  activeDriver: isSupabaseConfigured() ? "supabase" : "file",
+function makeModel(name) {
+  const supaTable = tableMap[name] || name.toLowerCase() + "s";
+  const useSupa = !_fallbackToFilestore && isSupabaseConfigured() && [
+    "students", "batches", "courses", "monthly_fees", "payments", "profiles", "audit_logs",
+    "notifications", "fee_settings", "student_notes", "student_documents"
+  ].includes(tableMap[name]);
 
-  model(name) {
-    const supaTable = tableMap[name] || name.toLowerCase() + "s";
-    const useSupa = useSupabaseFor(name);
+  if (!useSupa) return fileStore.model(name);
 
-    if (!useSupa) {
-      return fileStore.model(name);
-    }
+  const sb = getSupabase();
+  if (!sb) return fileStore.model(name);
 
-    const sb = getSupabase();
-
-    return {
-      async find(filter = {}, sort = null) {
+  const storeMethods = {
+    async find(filter = {}, sort = null) {
+      try {
         let q = sb.from(supaTable).select("*");
-
-        // Apply filters
         for (const [k, v] of Object.entries(filter)) {
           if (v === null || v === undefined) continue;
           const col = columnFor(name, k);
-
           if (typeof v === "object" && !Array.isArray(v) && v !== null) {
             if (v.$ne !== undefined) q = q.neq(col, v.$ne);
             else if (v.$gte !== undefined) q = q.gte(col, v.$gte);
@@ -372,40 +327,42 @@ const store = {
             q = q.eq(col, v);
           }
         }
-
-        // Apply sort
         if (sort && typeof sort === "object") {
           for (const [key, order] of Object.entries(sort)) {
             const col = columnFor(name, key);
             q = q.order(col, { ascending: order === 1 });
           }
         }
-
         const { data, error } = await q;
-        if (error) {
-          console.error(`[supabase] find(${supaTable}) error:`, error.message);
-          throw error;
-        }
+        if (error) throw error;
         return (data || []).map(r => fromSupabaseRow(name, r));
-      },
+      } catch (e) {
+        console.warn(`[supabase] find(${supaTable}) failed, using fileStore:`, e.message);
+        _fallbackToFilestore = true;
+        return fileStore.model(name).find(filter, sort);
+      }
+    },
 
-      async findById(id) {
+    async findById(id) {
+      try {
         const { data, error } = await sb.from(supaTable).select("*").eq("id", id).single();
         if (error && error.code === "PGRST116") return null;
-        if (error) {
-          console.error(`[supabase] findById(${supaTable}) error:`, error.message);
-          throw error;
-        }
+        if (error) throw error;
         return fromSupabaseRow(name, data);
-      },
+      } catch (e) {
+        console.warn(`[supabase] findById(${supaTable}) failed, using fileStore:`, e.message);
+        _fallbackToFilestore = true;
+        return fileStore.model(name).findById(id);
+      }
+    },
 
-      async findOne(filter = {}) {
-        const res = await this.find(filter, null);
-        return res[0] || null;
-      },
+    async findOne(filter = {}) {
+      const res = await this.find(filter, null);
+      return res[0] || null;
+    },
 
-      async count(filter = {}) {
-        // Use count query instead of fetching all rows
+    async count(filter = {}) {
+      try {
         let q = sb.from(supaTable).select("*", { count: "exact", head: true });
         for (const [k, v] of Object.entries(filter)) {
           if (v === null || v === undefined) continue;
@@ -421,42 +378,51 @@ const store = {
         const { count, error } = await q;
         if (error) throw error;
         return count || 0;
-      },
+      } catch (e) {
+        _fallbackToFilestore = true;
+        return fileStore.model(name).count(filter);
+      }
+    },
 
-      async create(data) {
+    async create(data) {
+      try {
         const row = toSupabaseRow(name, data);
-        // Remove id if empty to let Supabase generate UUID
         if (!row.id) delete row.id;
         const { data: inserted, error } = await sb.from(supaTable).insert(row).select().single();
-        if (error) {
-          console.error(`[supabase] create(${supaTable}) error:`, error.message, row);
-          throw error;
-        }
+        if (error) throw error;
         return fromSupabaseRow(name, inserted);
-      },
+      } catch (e) {
+        _fallbackToFilestore = true;
+        return fileStore.model(name).create(data);
+      }
+    },
 
-      async updateById(id, patch = {}) {
+    async updateById(id, patch = {}) {
+      try {
         const row = toSupabaseRow(name, patch);
-        // Don't send id in update
         delete row.id;
         const { data, error } = await sb.from(supaTable).update(row).eq("id", id).select().single();
-        if (error) {
-          console.error(`[supabase] updateById(${supaTable}) error:`, error.message);
-          throw error;
-        }
+        if (error) throw error;
         return fromSupabaseRow(name, data);
-      },
+      } catch (e) {
+        _fallbackToFilestore = true;
+        return fileStore.model(name).updateById(id, patch);
+      }
+    },
 
-      async deleteById(id) {
+    async deleteById(id) {
+      try {
         const { data, error } = await sb.from(supaTable).delete().eq("id", id).select().single();
-        if (error) {
-          console.error(`[supabase] deleteById(${supaTable}) error:`, error.message);
-          throw error;
-        }
+        if (error) throw error;
         return fromSupabaseRow(name, data);
-      },
+      } catch (e) {
+        _fallbackToFilestore = true;
+        return fileStore.model(name).deleteById(id);
+      }
+    },
 
-      async deleteMany(filter = {}) {
+    async deleteMany(filter = {}) {
+      try {
         let q = sb.from(supaTable).delete();
         for (const [k, v] of Object.entries(filter)) {
           const col = columnFor(name, k);
@@ -465,34 +431,52 @@ const store = {
         const { error, count } = await q;
         if (error) throw error;
         return count || 0;
-      },
+      } catch (e) {
+        _fallbackToFilestore = true;
+        return fileStore.model(name).deleteMany(filter);
+      }
+    },
 
-      async findOneAndUpdate(filter = {}, patch = {}, opts = {}) {
-        const existing = await this.findOne(filter);
-        if (!existing) {
-          if (opts.upsert) return this.create({ ...filter, ...patch });
-          return null;
-        }
-        return this.updateById(existing.id, patch);
-      },
+    async findOneAndUpdate(filter = {}, patch = {}, opts = {}) {
+      const existing = await this.findOne(filter);
+      if (!existing) {
+        if (opts.upsert) return this.create({ ...filter, ...patch });
+        return null;
+      }
+      return this.updateById(existing.id, patch);
+    },
 
-      countDocuments(filter = {}) {
-        return this.count(filter);
-      },
+    countDocuments(filter = {}) {
+      return this.count(filter);
+    },
 
-      async distinct(field) {
+    async distinct(field) {
+      try {
         const col = columnFor(name, field);
         const { data, error } = await sb.from(supaTable).select(col);
-        if (error) {
-          console.error(`[supabase] distinct(${supaTable}.${col}) error:`, error.message);
-          throw error;
-        }
+        if (error) throw error;
         return [...new Set((data || []).map(r => r[col]).filter(Boolean))];
-      },
-    };
+      } catch (e) {
+        console.warn(`[supabase] distinct(${supaTable}.${field}) failed, using fileStore:`, e.message);
+        _fallbackToFilestore = true;
+        return fileStore.model(name).distinct(field);
+      }
+    },
+  };
+
+  return storeMethods;
+}
+
+const store = {
+  get activeDriver() {
+    return _fallbackToFilestore ? "file" : (isSupabaseConfigured() ? "supabase" : "file");
   },
 
-  connection: () => ({ readyState: isSupabaseConfigured() ? 1 : 1 }),
+  model(name) {
+    return makeModel(name);
+  },
+
+  connection: () => ({ readyState: isSupabaseConfigured() && !_fallbackToFilestore ? 1 : 1 }),
 };
 
 export default store;
