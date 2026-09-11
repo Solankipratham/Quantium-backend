@@ -1,0 +1,73 @@
+{
+  "users": [
+    {
+      "name": "Admin",
+      "email": "admin@quantum.in",
+      "username": "admin",
+      "password": "$2a$10$/Zt4u4/ADDyUmpTJEP6yvuwgAF/rz.46TMO2ZUBPJTtzZ2BdDb3Qa",
+      "role": "ADMIN",
+      "phone": "9876543210",
+      "active": true,
+      "id": "id_81a3060beaa3bb5a",
+      "createdAt": "2026-09-05T16:02:15.107Z",
+      "updatedAt": "2026-09-05T16:02:15.109Z"
+    }
+  ],
+  "students": [],
+  "payments": [],
+  "batches": [],
+  "expenses": [
+    {
+      "category": "Electricity",
+      "description": "Electricity",
+      "amount": 500,
+      "date": "2026-09-11T00:00:00.000Z",
+      "method": "Cash",
+      "notes": "Electricty",
+      "id": "id_cc010352840599fc",
+      "createdAt": "2026-09-11T16:57:37.519Z",
+      "updatedAt": "2026-09-11T16:57:37.519Z"
+    }
+  ],
+  "feephans": [],
+  "feeplans": [],
+  "auditlogs": [],
+  "notifications": [],
+  "settings": [
+    {
+      "key": "app",
+      "value": {
+        "coaching": {
+          "name": "Quantum",
+          "tagline": "Coaching & Learning",
+          "address": "12, MG Road, Pune, Maharashtra 411001",
+          "phone": "+91 98765 43210",
+          "email": "hello@quantum.in"
+        },
+        "fee": {
+          "defaultDueDate": 10,
+          "defaultPaymentCycle": "Monthly",
+          "allowAdvancePayments": false
+        },
+        "receipt": {
+          "prefix": "QTM",
+          "startNumber": 1,
+          "pattern": "{prefix}-{number}"
+        },
+        "profile": {
+          "currency": "₹"
+        }
+      },
+      "id": "id_49cdb464f1e6c554",
+      "createdAt": "2026-09-05T16:02:15.110Z",
+      "updatedAt": "2026-09-05T16:02:15.110Z"
+    },
+    {
+      "key": "receiptCounter",
+      "value": 0,
+      "id": "id_3000ee50708ef808",
+      "createdAt": "2026-09-05T16:02:15.110Z",
+      "updatedAt": "2026-09-11T15:23:22.628Z"
+    }
+  ]
+}
