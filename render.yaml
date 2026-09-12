@@ -26,3 +26,9 @@ services:
         sync: false
       - key: CLIENT_URL
         sync: false
+      - key: ADMIN_EMAIL
+        value: admin@quantum.in
+      - key: ADMIN_PASSWORD_HASH
+        value: $2a$10$0A/6j/EqElG3RvwF015tVO/kgi0D/ldzb6I2bgZIFjDVElO8Jfthm
+      - key: ADMIN_NAME
+        value: Admin

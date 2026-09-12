@@ -1,6 +1,7 @@
-import { getSupabase, isSupabaseConfigured } from "../lib/supabase.js";
 import jwt from "jsonwebtoken";
 import { getStore } from "../data/store.js";
+
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@quantum.in";
 
 export async function authRequired(req, res, next) {
   try {
@@ -10,28 +11,22 @@ export async function authRequired(req, res, next) {
       return res.status(401).json({ message: "Authentication required." });
     }
 
-    // If Supabase is configured, verify via Supabase Auth
-    if (isSupabaseConfigured()) {
-      const supabase = getSupabase();
-      const { data: { user }, error } = await supabase.auth.getUser(token);
-      if (error || !user) {
-        return res.status(401).json({ message: "Invalid or expired session." });
-      }
-      // Load profile from profiles table
-      const store = await getStore();
-      const profile = await store.model("User").findById(user.id);
-      req.user = profile || {
-        id: user.id,
-        name: user.user_metadata?.full_name || user.user_metadata?.name || "",
-        email: user.email,
-        role: user.user_metadata?.role || "admin"
+    // Verify local JWT
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Check if this is the admin user
+    if (payload.uid === "admin-001") {
+      req.user = {
+        id: "admin-001",
+        name: process.env.ADMIN_NAME || "Admin",
+        email: ADMIN_EMAIL,
+        role: "admin"
       };
-      req.userId = user.id;
+      req.userId = "admin-001";
       return next();
     }
 
-    // Fallback: verify with local JWT (for fileStore mode)
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    // Otherwise look up in the database
     const store = await getStore();
     const user = await store.model("User").findById(payload.uid);
     if (!user || user.active === false) {

@@ -18,6 +18,10 @@ if (url && anon) {
   console.log("[supabase] no env vars — using API fallback");
 }
 
+// Always use the Express API fallback — auth and data go through the backend
+supabase = null;
+isRealSupabase = false;
+
 // Fallback: proxy to Express API when Supabase JS client is not usable
 function createFallbackClient() {
   const getToken = () => localStorage.getItem("quantum_token") || "";
