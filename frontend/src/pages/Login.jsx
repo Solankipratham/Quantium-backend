@@ -55,7 +55,7 @@ export default function Login() {
             <Input
               label="Email"
               type="email"
-              placeholder="admin@quantum.in"
+              placeholder=""
               icon={Mail}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
