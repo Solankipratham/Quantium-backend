@@ -47,8 +47,9 @@ export async function authRequired(req, res, next) {
 }
 
 export function authorize(...roles) {
+  const normalized = roles.map(r => String(r).toLowerCase());
   return (req, res, next) => {
-    if (roles.length && !roles.includes(req.user.role)) {
+    if (normalized.length && !normalized.includes(String(req.user.role).toLowerCase())) {
       return res.status(403).json({ message: "You do not have permission for this action." });
     }
     next();
