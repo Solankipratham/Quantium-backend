@@ -281,18 +281,23 @@ function fromSupabaseRow(model, row) {
   return out;
 }
 
-let _fallbackToFilestore = false;
+const _tableReadyCache = {};
 
-function getSb() {
-  if (_fallbackToFilestore) return null;
-  const sb = getSupabase();
-  if (!sb) { _fallbackToFilestore = true; return null; }
-  return sb;
+function isTableReady(tableName) {
+  return _tableReadyCache[tableName] === true;
+}
+
+function markTableReady(tableName) {
+  _tableReadyCache[tableName] = true;
+}
+
+function markTableNotReady(tableName) {
+  _tableReadyCache[tableName] = false;
 }
 
 function makeModel(name) {
   const supaTable = tableMap[name] || name.toLowerCase() + "s";
-  const useSupa = !_fallbackToFilestore && isSupabaseConfigured() && [
+  const useSupa = isSupabaseConfigured() && [
     "students", "batches", "courses", "monthly_fees", "payments", "profiles", "audit_logs",
     "notifications", "fee_settings", "student_notes", "student_documents"
   ].includes(tableMap[name]);
@@ -335,10 +340,15 @@ function makeModel(name) {
         }
         const { data, error } = await q;
         if (error) throw error;
+        markTableReady(supaTable);
         return (data || []).map(r => fromSupabaseRow(name, r));
       } catch (e) {
-        console.warn(`[supabase] find(${supaTable}) failed, using fileStore:`, e.message);
-        _fallbackToFilestore = true;
+        if (e.message?.includes("does not exist") || e.code === "42P01" || e.message?.includes("relation") || e.message?.includes("table")) {
+          markTableNotReady(supaTable);
+          console.warn(`[supabase] table ${supaTable} not found — using fileStore`);
+        } else {
+          console.warn(`[supabase] find(${supaTable}) error:`, e.message);
+        }
         return fileStore.model(name).find(filter, sort);
       }
     },
@@ -348,10 +358,12 @@ function makeModel(name) {
         const { data, error } = await sb.from(supaTable).select("*").eq("id", id).single();
         if (error && error.code === "PGRST116") return null;
         if (error) throw error;
+        markTableReady(supaTable);
         return fromSupabaseRow(name, data);
       } catch (e) {
-        console.warn(`[supabase] findById(${supaTable}) failed, using fileStore:`, e.message);
-        _fallbackToFilestore = true;
+        if (e.message?.includes("does not exist") || e.code === "42P01" || e.message?.includes("relation") || e.message?.includes("table")) {
+          markTableNotReady(supaTable);
+        }
         return fileStore.model(name).findById(id);
       }
     },
@@ -377,9 +389,9 @@ function makeModel(name) {
         }
         const { count, error } = await q;
         if (error) throw error;
+        markTableReady(supaTable);
         return count || 0;
       } catch (e) {
-        _fallbackToFilestore = true;
         return fileStore.model(name).count(filter);
       }
     },
@@ -390,9 +402,10 @@ function makeModel(name) {
         if (!row.id) delete row.id;
         const { data: inserted, error } = await sb.from(supaTable).insert(row).select().single();
         if (error) throw error;
+        markTableReady(supaTable);
         return fromSupabaseRow(name, inserted);
       } catch (e) {
-        _fallbackToFilestore = true;
+        console.warn(`[supabase] create(${supaTable}) error:`, e.message);
         return fileStore.model(name).create(data);
       }
     },
@@ -403,9 +416,10 @@ function makeModel(name) {
         delete row.id;
         const { data, error } = await sb.from(supaTable).update(row).eq("id", id).select().single();
         if (error) throw error;
+        markTableReady(supaTable);
         return fromSupabaseRow(name, data);
       } catch (e) {
-        _fallbackToFilestore = true;
+        console.warn(`[supabase] updateById(${supaTable}) error:`, e.message);
         return fileStore.model(name).updateById(id, patch);
       }
     },
@@ -414,9 +428,10 @@ function makeModel(name) {
       try {
         const { data, error } = await sb.from(supaTable).delete().eq("id", id).select().single();
         if (error) throw error;
+        markTableReady(supaTable);
         return fromSupabaseRow(name, data);
       } catch (e) {
-        _fallbackToFilestore = true;
+        console.warn(`[supabase] deleteById(${supaTable}) error:`, e.message);
         return fileStore.model(name).deleteById(id);
       }
     },
@@ -430,9 +445,10 @@ function makeModel(name) {
         }
         const { error, count } = await q;
         if (error) throw error;
+        markTableReady(supaTable);
         return count || 0;
       } catch (e) {
-        _fallbackToFilestore = true;
+        console.warn(`[supabase] deleteMany(${supaTable}) error:`, e.message);
         return fileStore.model(name).deleteMany(filter);
       }
     },
@@ -455,10 +471,10 @@ function makeModel(name) {
         const col = columnFor(name, field);
         const { data, error } = await sb.from(supaTable).select(col);
         if (error) throw error;
+        markTableReady(supaTable);
         return [...new Set((data || []).map(r => r[col]).filter(Boolean))];
       } catch (e) {
-        console.warn(`[supabase] distinct(${supaTable}.${field}) failed, using fileStore:`, e.message);
-        _fallbackToFilestore = true;
+        console.warn(`[supabase] distinct(${supaTable}.${field}) error:`, e.message);
         return fileStore.model(name).distinct(field);
       }
     },
@@ -469,14 +485,14 @@ function makeModel(name) {
 
 const store = {
   get activeDriver() {
-    return _fallbackToFilestore ? "file" : (isSupabaseConfigured() ? "supabase" : "file");
+    return isSupabaseConfigured() ? "supabase" : "file";
   },
 
   model(name) {
     return makeModel(name);
   },
 
-  connection: () => ({ readyState: isSupabaseConfigured() && !_fallbackToFilestore ? 1 : 1 }),
+  connection: () => ({ readyState: isSupabaseConfigured() ? 1 : 1 }),
 };
 
 export default store;

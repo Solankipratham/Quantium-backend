@@ -1,46 +1,8 @@
-import { Router } from "express";
-import { getSupabase, getSupabaseAdmin, isSupabaseConfigured } from "../lib/supabase.js";
-import { authRequired, authorize } from "../middleware/auth.js";
-import { writeAuditLog } from "../services/activity.js";
+-- Quantium Database Migration
+-- Run this in Supabase SQL Editor: https://supabase.com/dashboard/project/_/sql
 
-const router = Router();
-
-const requiredTables = [
-  "students", "payments", "batches", "courses",
-  "expenses", "audit_logs", "notifications",
-  "fee_settings", "monthly_fees", "profiles"
-];
-
-// Check which tables exist
-router.get("/migrate", authRequired, authorize("ADMIN", "admin"), async (req, res, next) => {
-  try {
-    if (!isSupabaseConfigured()) {
-      return res.status(400).json({ message: "Supabase not configured." });
-    }
-    const supabase = getSupabaseAdmin() || getSupabase();
-    const results = {};
-    for (const table of requiredTables) {
-      try {
-        const { count, error } = await supabase.from(table).select("*", { count: "exact", head: true });
-        if (error) {
-          results[table] = { exists: false, error: error.message };
-        } else {
-          results[table] = { exists: true, count: count || 0 };
-        }
-      } catch (e) {
-        results[table] = { exists: false, error: e.message };
-      }
-    }
-    const missing = Object.entries(results).filter(([, v]) => !v.exists).map(([k]) => k);
-    res.json({ tables: results, missing, allExist: missing.length === 0 });
-  } catch (e) { next(e); }
-});
-
-// Manual SQL migration — returns the SQL to run in Supabase dashboard
-router.get("/migrate/sql", authRequired, authorize("ADMIN", "admin"), async (_req, res) => {
-  res.json({
-    message: "Run this SQL in your Supabase SQL Editor (https://supabase.com/dashboard/project/_/sql)",
-    sql: `CREATE TABLE IF NOT EXISTS students (
+-- Students table
+CREATE TABLE IF NOT EXISTS students (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   student_code TEXT UNIQUE NOT NULL,
   full_name TEXT NOT NULL,
@@ -75,6 +37,7 @@ router.get("/migrate/sql", authRequired, authorize("ADMIN", "admin"), async (_re
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- Payments table
 CREATE TABLE IF NOT EXISTS payments (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   transaction_id TEXT,
@@ -91,6 +54,7 @@ CREATE TABLE IF NOT EXISTS payments (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- Batches table
 CREATE TABLE IF NOT EXISTS batches (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT NOT NULL,
@@ -106,6 +70,7 @@ CREATE TABLE IF NOT EXISTS batches (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- Courses / Fee Plans table
 CREATE TABLE IF NOT EXISTS courses (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT NOT NULL,
@@ -120,6 +85,7 @@ CREATE TABLE IF NOT EXISTS courses (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- Expenses table
 CREATE TABLE IF NOT EXISTS expenses (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   title TEXT DEFAULT '',
@@ -132,6 +98,7 @@ CREATE TABLE IF NOT EXISTS expenses (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- Audit logs table
 CREATE TABLE IF NOT EXISTS audit_logs (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id TEXT DEFAULT '',
@@ -144,6 +111,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- Notifications table
 CREATE TABLE IF NOT EXISTS notifications (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   type TEXT DEFAULT '',
@@ -155,6 +123,7 @@ CREATE TABLE IF NOT EXISTS notifications (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- Fee settings table
 CREATE TABLE IF NOT EXISTS fee_settings (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   key TEXT UNIQUE NOT NULL,
@@ -163,6 +132,7 @@ CREATE TABLE IF NOT EXISTS fee_settings (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- Monthly fees table
 CREATE TABLE IF NOT EXISTS monthly_fees (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   student_id UUID REFERENCES students(id) ON DELETE CASCADE,
@@ -175,6 +145,7 @@ CREATE TABLE IF NOT EXISTS monthly_fees (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- Profiles table (admin users)
 CREATE TABLE IF NOT EXISTS profiles (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   full_name TEXT DEFAULT '',
@@ -184,6 +155,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_students_student_code ON students(student_code);
 CREATE INDEX IF NOT EXISTS idx_students_batch_name ON students(batch_name);
 CREATE INDEX IF NOT EXISTS idx_students_course_name ON students(course_name);
@@ -194,6 +166,7 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_entity ON audit_logs(entity_type, enti
 CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read);
 CREATE INDEX IF NOT EXISTS idx_fee_settings_key ON fee_settings(key);
 
+-- Enable Row Level Security (RLS) - disabled for backend service role access
 ALTER TABLE students ENABLE ROW LEVEL SECURITY;
 ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE batches ENABLE ROW LEVEL SECURITY;
@@ -205,6 +178,9 @@ ALTER TABLE fee_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE monthly_fees ENABLE ROW LEVEL SECURITY;
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 
+-- Policies: Allow service role (backend) full access
+-- The backend uses the service-role key which bypasses RLS by default
+-- These policies allow the anon key to read for any public needs
 CREATE POLICY "Service role full access" ON students FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Service role full access" ON payments FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Service role full access" ON batches FOR ALL USING (true) WITH CHECK (true);
@@ -214,33 +190,4 @@ CREATE POLICY "Service role full access" ON audit_logs FOR ALL USING (true) WITH
 CREATE POLICY "Service role full access" ON notifications FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Service role full access" ON fee_settings FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Service role full access" ON monthly_fees FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Service role full access" ON profiles FOR ALL USING (true) WITH CHECK (true);`
-  });
-});
-
-const tables = [
-  "students", "batches", "courses", "payments",
-  "monthly_fees", "audit_logs", "notifications", "fee_settings"
-];
-
-router.post("/reset", authRequired, authorize("ADMIN", "admin"), async (req, res, next) => {
-  try {
-    if (!isSupabaseConfigured()) {
-      return res.status(400).json({ message: "Reset only available with Supabase database." });
-    }
-    const supabase = getSupabase();
-    const results = {};
-    for (const table of tables) {
-      const { error, count } = await supabase.from(table).delete().not("id", "is", null);
-      if (error) {
-        results[table] = { error: error.message };
-      } else {
-        results[table] = { deleted: count };
-      }
-    }
-    await writeAuditLog({ user: req.user, action: "Reset all data", entity: "System", ip: req.ip });
-    res.json({ success: true, message: "All data cleared.", results });
-  } catch (e) { next(e); }
-});
-
-export default router;
+CREATE POLICY "Service role full access" ON profiles FOR ALL USING (true) WITH CHECK (true);
