@@ -7,28 +7,25 @@ import { Eye, EyeOff, Mail, Lock, ArrowRight } from "lucide-react";
 export default function Login() {
   const { token, login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState("admin@quantum.in");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  if (token) return <Navigate to="/dashboard" replace />;
-
-  const validateEmail = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+  if (token) return <Navigate to="/admin/dashboard" replace />;
 
   const submit = async (ev) => {
     ev.preventDefault();
     setError("");
 
     if (!email.trim()) { setError("Please enter your email address."); return; }
-    if (!validateEmail(email)) { setError("Please enter a valid email address."); return; }
     if (!password) { setError("Please enter your password."); return; }
 
     setLoading(true);
     try {
       await login(email.trim().toLowerCase(), password);
-      navigate("/dashboard");
+      navigate("/admin/dashboard");
     } catch (err) {
       setError(err.message || "Invalid email or password. Please check your credentials and try again.");
     } finally {
@@ -38,7 +35,6 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-brand-500/5 rounded-full blur-3xl" />
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/5 rounded-full blur-3xl" />
@@ -46,16 +42,14 @@ export default function Login() {
       </div>
 
       <div className="w-full max-w-[420px] relative z-10 animate-fade-in">
-        {/* Brand */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-500 to-purple-600 shadow-lg shadow-brand-500/25 mb-4">
             <span className="text-white font-extrabold text-xl tracking-wider" style={{ fontFamily: "Space Grotesk, Inter, sans-serif" }}>Q</span>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight" style={{ fontFamily: "Space Grotesk, Inter, sans-serif" }}>Welcome back</h1>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight" style={{ fontFamily: "Space Grotesk, Inter, sans-serif" }}>Admin Login</h1>
           <p className="text-sm text-slate-500 mt-1.5">Sign in to the Fee Management System</p>
         </div>
 
-        {/* Form card */}
         <div className="bg-white rounded-3xl border border-slate-200 shadow-elevated p-6 sm:p-8">
           <form onSubmit={submit} className="space-y-5">
             <Input
@@ -99,12 +93,6 @@ export default function Login() {
               {!loading && <ArrowRight className="w-4 h-4" />}
             </Button>
           </form>
-
-          <div className="mt-5 text-center">
-            <Link to="/forgot-password" className="text-sm text-brand-600 hover:text-brand-700 font-medium transition-colors">
-              Forgot your password?
-            </Link>
-          </div>
         </div>
 
         <p className="text-center text-xs text-slate-400 mt-6">

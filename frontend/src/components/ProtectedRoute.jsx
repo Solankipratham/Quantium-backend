@@ -2,7 +2,7 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 
 export default function ProtectedRoute({ children }) {
-  const { token, loading } = useAuth();
+  const { token, loading, isAdmin } = useAuth();
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 grid place-items-center">
@@ -13,6 +13,15 @@ export default function ProtectedRoute({ children }) {
       </div>
     );
   }
-  if (!token) return <Navigate to="/login" replace />;
+  if (!token) return <Navigate to="/admin/login" replace />;
+  if (!isAdmin) return (
+    <div className="min-h-screen bg-slate-50 grid place-items-center p-8 text-center">
+      <div>
+        <div className="text-lg font-bold text-slate-900">Access Denied</div>
+        <p className="text-sm text-slate-500 mt-2">Only the admin account is authorized to access this panel.</p>
+        <a href="/admin/login" className="text-sm text-brand-600 hover:underline mt-4 inline-block">Go to login</a>
+      </div>
+    </div>
+  );
   return children;
 }

@@ -184,19 +184,6 @@ function createFallbackClient() {
       removeChannel() {},
 
       auth: {
-        signUp: async ({ email, password, options }) => {
-          try {
-            const r = await api("/api/auth/register", {
-              method: "POST",
-              body: JSON.stringify({ email, password, name: options?.data?.full_name, role: options?.data?.role })
-            });
-            if (r.token) {
-              localStorage.setItem("quantum_token", r.token);
-              localStorage.setItem("quantum_user", JSON.stringify(r.user));
-            }
-            return { data: { user: r.user, session: r.token ? { access_token: r.token } : null }, error: null };
-          } catch (e) { return { data: { user: null, session: null }, error: e }; }
-        },
         signInWithPassword: async ({ email, password }) => {
           try {
             const r = await api("/api/auth/login", {

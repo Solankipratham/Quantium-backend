@@ -8,25 +8,25 @@ import { Avatar } from "./ui.jsx";
 
 const NAV = [
   { section: "Main", items: [
-    { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { to: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   ] },
   { section: "Management", items: [
-    { to: "/students", label: "Students", icon: Users },
-    { to: "/batches", label: "Batches", icon: Layers },
-    { to: "/fee-structure", label: "Courses", icon: Building2 },
+    { to: "/admin/students", label: "Students", icon: Users },
+    { to: "/admin/batches", label: "Batches", icon: Layers },
+    { to: "/admin/fee-structure", label: "Courses", icon: Building2 },
   ] },
   { section: "Finance", items: [
-    { to: "/fees/pending", label: "Pending Fees", icon: Clock3 },
-    { to: "/payments", label: "Payments", icon: Receipt },
-    { to: "/collections/daily", label: "Daily Collection", icon: Wallet },
-    { to: "/collections/monthly", label: "Monthly Collection", icon: IndianRupee },
-    { to: "/expenses", label: "Expenses", icon: IndianRupee },
+    { to: "/admin/fees/pending", label: "Pending Fees", icon: Clock3 },
+    { to: "/admin/payments", label: "Payments", icon: Receipt },
+    { to: "/admin/collections/daily", label: "Daily Collection", icon: Wallet },
+    { to: "/admin/collections/monthly", label: "Monthly Collection", icon: IndianRupee },
+    { to: "/admin/expenses", label: "Expenses", icon: IndianRupee },
   ] },
   { section: "System", items: [
-    { to: "/reports", label: "Reports", icon: FileBarChart },
-    { to: "/recycle-bin", label: "Recycle Bin", icon: Trash2 },
-    { to: "/notifications", label: "Notifications", icon: Bell },
-    { to: "/settings", label: "Settings", icon: Settings },
+    { to: "/admin/reports", label: "Reports", icon: FileBarChart },
+    { to: "/admin/recycle-bin", label: "Recycle Bin", icon: Trash2 },
+    { to: "/admin/notifications", label: "Notifications", icon: Bell },
+    { to: "/admin/settings", label: "Settings", icon: Settings },
   ] },
 ];
 
@@ -67,7 +67,7 @@ function SidebarContent({ onNavigate }) {
                 <NavLink key={item.to} to={item.to} onClick={onNavigate} className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${isActive ? "bg-brand-600 text-white shadow-lg shadow-brand-600/25" : "text-slate-400 hover:text-white hover:bg-white/5"}`}>
                   <item.icon className="w-[18px] h-[18px] shrink-0" />
                   <span className="truncate flex-1">{item.label}</span>
-                  {item.to === "/recycle-bin" && recycleCount > 0 ? (
+                  {item.to === "/admin/recycle-bin" && recycleCount > 0 ? (
                     <span className="bg-danger-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">{recycleCount}</span>
                   ) : null}
                 </NavLink>
@@ -86,7 +86,7 @@ function SidebarContent({ onNavigate }) {
             <div className="text-[11px] text-slate-400 truncate">{user?.role || "admin"}</div>
           </div>
         </div>
-        <button onClick={async () => { await logout(); navigate("/login"); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-white/5 transition-colors">
+        <button onClick={async () => { await logout(); navigate("/admin/login"); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-white/5 transition-colors">
           <LogOut className="w-4 h-4" /> Sign Out
         </button>
       </div>
@@ -116,8 +116,9 @@ export function Layout({ children }) {
   // Close drawer on navigation
   useEffect(() => { setOpen(false); }, [location.pathname]);
 
-  // Breadcrumb from path
-  const crumbs = location.pathname.split("/").filter(Boolean);
+  // Breadcrumb from path (strip /admin/ prefix)
+  const pathParts = location.pathname.split("/").filter(Boolean);
+  const crumbs = pathParts[0] === "admin" ? pathParts.slice(1) : pathParts;
   const pageTitle = crumbs.length > 0 ? crumbs[crumbs.length - 1].replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "Dashboard";
 
   return (

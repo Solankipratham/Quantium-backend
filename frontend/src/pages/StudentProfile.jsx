@@ -67,7 +67,7 @@ export default function StudentProfile() {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto w-full min-w-0 overflow-x-hidden">
-      <Link to="/students" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-brand-600 transition-colors min-h-[44px]">
+      <Link to="/admin/students" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-brand-600 transition-colors min-h-[44px]">
         <ArrowLeft className="w-4 h-4" />Back to students
       </Link>
 

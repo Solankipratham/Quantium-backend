@@ -18,7 +18,7 @@ export default function BatchDetail() {
   return (
     <div className="space-y-6 max-w-5xl mx-auto w-full min-w-0 overflow-x-hidden">
       <Link
-        to="/batches"
+        to="/admin/batches"
         className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-brand-600 transition-colors min-h-[44px]"
       >
         <ArrowLeft className="w-4 h-4" />

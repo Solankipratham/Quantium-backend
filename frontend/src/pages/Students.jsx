@@ -66,7 +66,7 @@ export default function Students() {
         title="Students"
         subtitle={`${students.length} students · Search, filter, and manage fees in seconds.`}
         action={
-          <Link to="/students/new">
+          <Link to="/admin/students/new">
             <Button><Plus className="w-4 h-4 mr-2" />Add Student</Button>
           </Link>
         }
@@ -121,7 +121,7 @@ export default function Students() {
           icon={Users}
           title="No students found"
           description="Add your first student to start managing fees."
-          action={<Link to="/students/new"><Button><Plus className="w-4 h-4 mr-2" />Add Student</Button></Link>}
+          action={<Link to="/admin/students/new"><Button><Plus className="w-4 h-4 mr-2" />Add Student</Button></Link>}
         />
       ) : (
         <>

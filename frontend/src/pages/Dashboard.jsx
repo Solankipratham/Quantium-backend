@@ -51,7 +51,7 @@ export default function Dashboard() {
         subtitle="Overview of your coaching business"
         action={
           <div className="flex gap-2">
-            <Link to="/students/new">
+            <Link to="/admin/students/new">
               <Button variant="primary" size="sm"><Plus className="w-4 h-4" /> New Student</Button>
             </Link>
             <Button variant="secondary" size="sm" onClick={() => setPayOpen(true)}>
@@ -109,13 +109,13 @@ export default function Dashboard() {
 
       {/* ── Quick Actions ── */}
       <div className="flex flex-wrap gap-2">
-        <Link to="/students">
+        <Link to="/admin/students">
           <Button variant="secondary" size="sm" className="gap-1.5"><Users className="w-4 h-4" /> View Students</Button>
         </Link>
-        <Link to="/fees/pending">
+        <Link to="/admin/fees/pending">
           <Button variant="secondary" size="sm" className="gap-1.5"><Clock3 className="w-4 h-4" /> Pending Fees</Button>
         </Link>
-        <Link to="/reports">
+        <Link to="/admin/reports">
           <Button variant="ghost" size="sm" className="gap-1.5"><FileBarChart className="w-4 h-4" /> Reports</Button>
         </Link>
       </div>

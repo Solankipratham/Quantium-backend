@@ -124,7 +124,7 @@ export default function Settings() {
           <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center"><ShieldCheck className="w-4 h-4" /></div>
           <div className="flex items-center justify-between flex-1">
             <div className="text-sm font-semibold text-slate-900">Audit Log</div>
-            <a href="/audit" className="text-xs font-semibold text-brand-600 hover:text-brand-700 transition-colors">View full audit log →</a>
+            <a href="/admin/audit" className="text-xs font-semibold text-brand-600 hover:text-brand-700 transition-colors">View full audit log →</a>
           </div>
         </div>
       </Card>

@@ -4,6 +4,8 @@ import { api } from "../api/client.js";
 
 const AuthContext = createContext(null);
 
+const ADMIN_EMAIL = "admin@quantum.in";
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     try { return JSON.parse(localStorage.getItem("quantum_user") || "null"); } catch { return null; }
@@ -11,7 +13,6 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => localStorage.getItem("quantum_token") || "");
   const [loading, setLoading] = useState(true);
 
-  // On mount: check if we have a valid session
   useEffect(() => {
     (async () => {
       try {
@@ -19,25 +20,45 @@ export function AuthProvider({ children }) {
         if (session?.access_token) {
           setToken(session.access_token);
           localStorage.setItem("quantum_token", session.access_token);
-          // Load user profile
           const { data: { user: supaUser } } = await supabase.auth.getUser();
           if (supaUser) {
+            if (supaUser.email !== ADMIN_EMAIL) {
+              await supabase.auth.signOut();
+              localStorage.removeItem("quantum_token");
+              localStorage.removeItem("quantum_user");
+              setToken("");
+              setUser(null);
+              return;
+            }
             const u = {
               id: supaUser.id,
-              name: supaUser.user_metadata?.full_name || supaUser.user_metadata?.name || "",
+              name: supaUser.user_metadata?.full_name || supaUser.user_metadata?.name || "Admin",
               email: supaUser.email,
-              role: supaUser.user_metadata?.role || "admin"
+              role: "admin"
             };
             setUser(u);
             localStorage.setItem("quantum_user", JSON.stringify(u));
           }
         } else {
-          // Try legacy token
           const legacyToken = localStorage.getItem("quantum_token");
           if (legacyToken) {
-            const r = await api("/api/auth/me");
-            setUser(r.user);
-            localStorage.setItem("quantum_user", JSON.stringify(r.user));
+            try {
+              const r = await api("/api/auth/me");
+              if (r.user?.email !== ADMIN_EMAIL) {
+                localStorage.removeItem("quantum_token");
+                localStorage.removeItem("quantum_user");
+                setToken("");
+                setUser(null);
+                return;
+              }
+              setUser(r.user);
+              localStorage.setItem("quantum_user", JSON.stringify(r.user));
+            } catch {
+              localStorage.removeItem("quantum_token");
+              localStorage.removeItem("quantum_user");
+              setToken("");
+              setUser(null);
+            }
           }
         }
       } catch {
@@ -51,7 +72,6 @@ export function AuthProvider({ children }) {
     })();
   }, []);
 
-  // Listen for Supabase auth state changes
   useEffect(() => {
     if (!supabase.isFallback) {
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -60,11 +80,19 @@ export function AuthProvider({ children }) {
           localStorage.setItem("quantum_token", session.access_token);
           const { data: { user: supaUser } } = await supabase.auth.getUser();
           if (supaUser) {
+            if (supaUser.email !== ADMIN_EMAIL) {
+              await supabase.auth.signOut();
+              localStorage.removeItem("quantum_token");
+              localStorage.removeItem("quantum_user");
+              setToken("");
+              setUser(null);
+              return;
+            }
             const u = {
               id: supaUser.id,
-              name: supaUser.user_metadata?.full_name || supaUser.user_metadata?.name || "",
+              name: supaUser.user_metadata?.full_name || supaUser.user_metadata?.name || "Admin",
               email: supaUser.email,
-              role: supaUser.user_metadata?.role || "admin"
+              role: "admin"
             };
             setUser(u);
             localStorage.setItem("quantum_user", JSON.stringify(u));
@@ -84,11 +112,15 @@ export function AuthProvider({ children }) {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
     const supaUser = data.user;
+    if (supaUser.email !== ADMIN_EMAIL) {
+      await supabase.auth.signOut();
+      throw new Error("Access denied. Only the admin account is authorized.");
+    }
     const u = {
       id: supaUser.id,
-      name: supaUser.user_metadata?.full_name || supaUser.user_metadata?.name || "",
+      name: supaUser.user_metadata?.full_name || supaUser.user_metadata?.name || "Admin",
       email: supaUser.email,
-      role: supaUser.user_metadata?.role || "admin"
+      role: "admin"
     };
     const tok = data.session?.access_token || token;
     setToken(tok);
@@ -106,8 +138,10 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("quantum_user");
   };
 
+  const isAdmin = user?.email === ADMIN_EMAIL;
+
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout, setUser }}>
+    <AuthContext.Provider value={{ user, token, loading, login, logout, setUser, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );
