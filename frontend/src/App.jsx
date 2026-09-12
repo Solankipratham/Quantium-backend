@@ -21,6 +21,7 @@ import Notifications from "./pages/Notifications.jsx";
 import Settings from "./pages/Settings.jsx";
 import AuditLog from "./pages/AuditLog.jsx";
 import RecycleBin from "./pages/RecycleBin.jsx";
+import UnderDevelopment from "./pages/UnderDevelopment.jsx";
 
 function AdminProtected({ children }) {
   return <ProtectedRoute><Layout>{children}</Layout></ProtectedRoute>;
@@ -56,8 +57,9 @@ export default function App() {
             <Route path="/admin/recycle-bin" element={<AdminProtected><RecycleBin /></AdminProtected>} />
             <Route path="/admin/settings" element={<AdminProtected><Settings /></AdminProtected>} />
             <Route path="/admin/audit" element={<AdminProtected><AuditLog /></AdminProtected>} />
+            <Route path="/under-development" element={<AdminProtected><UnderDevelopment /></AdminProtected>} />
 
-            <Route path="*" element={<div className="min-h-screen bg-slate-50 grid place-items-center p-8 text-center"><div><div className="text-lg font-bold text-slate-900">Page not found</div><a href="/admin/dashboard" className="text-sm text-brand-600 hover:underline mt-2 inline-block">Go to dashboard</a></div></div>} />
+            <Route path="*" element={<UnderDevelopment />} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>
