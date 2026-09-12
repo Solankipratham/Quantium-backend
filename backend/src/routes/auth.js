@@ -2,7 +2,7 @@ import { Router } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { getStore } from "../data/store.js";
-import { getSupabase, isSupabaseConfigured } from "../lib/supabase.js";
+import { getSupabase, getSupabaseAdmin, isSupabaseConfigured } from "../lib/supabase.js";
 import { sanitize, validateSignup } from "../middleware/validate.js";
 import { authRequired } from "../middleware/auth.js";
 import { writeAuditLog } from "../services/activity.js";
@@ -26,7 +26,25 @@ router.post("/login", async (req, res, next) => {
     // If Supabase is configured, use Supabase Auth
     if (isSupabaseConfigured()) {
       const supabase = getSupabase();
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const adminClient = getSupabaseAdmin();
+      let { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+      // If login fails and admin client is available, try to auto-confirm the user
+      if (error && adminClient) {
+        try {
+          const { data: listData } = await adminClient.auth.admin.listUsers();
+          const found = listData?.users?.find(u => u.email?.toLowerCase() === String(email).toLowerCase());
+          if (found && !found.email_confirmed_at) {
+            await adminClient.auth.admin.updateUserById(found.id, { email_confirm: true });
+            const retry = await supabase.auth.signInWithPassword({ email, password });
+            data = retry.data;
+            error = retry.error;
+          }
+        } catch (adminErr) {
+          // If admin API fails, proceed with original error
+        }
+      }
+
       if (error) {
         return res.status(401).json({ message: error.message || "Invalid credentials." });
       }
@@ -69,32 +87,28 @@ router.post("/register", async (req, res, next) => {
     const errors = validateSignup(body);
     if (errors.length) return res.status(422).json({ message: errors.join(" ") });
 
-    // If Supabase is configured, use Supabase Auth
+    // If Supabase is configured, use admin API to create user with auto-confirm
     if (isSupabaseConfigured()) {
-      const supabase = getSupabase();
-      const { data, error } = await supabase.auth.signUp({
+      const adminClient = getSupabaseAdmin() || getSupabase();
+      const { data, error } = await adminClient.auth.admin.createUser({
         email: String(body.email).toLowerCase(),
         password: body.password,
-        options: {
-          data: {
-            full_name: body.name,
-            role: "admin"
-          }
+        email_confirm: true,
+        user_metadata: {
+          full_name: body.name,
+          role: "admin"
         }
       });
       if (error) {
         return res.status(400).json({ message: error.message || "Registration failed." });
       }
-      if (data.user && !data.session) {
-        return res.status(201).json({
-          message: "Registration successful. Please check your email to verify your account.",
-          user: { id: data.user.id, name: body.name, email: body.email, role: "admin" }
-        });
-      }
       const store = await getStore();
       const profile = await store.model("User").findById(data.user.id);
       const user = profile || { id: data.user.id, name: body.name, email: body.email, role: "admin" };
-      return res.status(201).json({ token: data.session?.access_token, user });
+      return res.status(201).json({
+        message: "Registration successful. You can now log in.",
+        user
+      });
     }
 
     // Fallback: local registration (fileStore mode)

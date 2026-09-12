@@ -1,4 +1,4 @@
-const BASE = import.meta.env.VITE_API_URL || "";
+const BASE = import.meta.env.VITE_API_URL || "https://quantium-backend.onrender.com";
 
 function getToken() {
   return localStorage.getItem("quantum_token") || "";

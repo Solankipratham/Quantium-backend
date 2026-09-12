@@ -22,7 +22,7 @@ if (url && anon) {
 function createFallbackClient() {
   const getToken = () => localStorage.getItem("quantum_token") || "";
 
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "";
+  const apiBaseUrl = import.meta.env.VITE_API_URL || "https://quantium-backend.onrender.com";
   const api = async (path, opts = {}) => {
     const token = getToken();
     const headers = { ...opts.headers };

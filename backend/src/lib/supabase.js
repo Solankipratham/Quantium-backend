@@ -13,7 +13,7 @@ function isValidKey(key) {
   return key && !String(key).includes("YOUR_") && String(key).length > 20;
 }
 
-if (url && isValidKey(serviceKey) || isValidKey(anonKey)) {
+if (url && (isValidKey(serviceKey) || isValidKey(anonKey))) {
   try {
     if (serviceKey) {
       supabaseAdmin = createClient(url, serviceKey, {
