@@ -17,6 +17,7 @@ import settingRoutes from "./routes/settings.js";
 import auditRoutes from "./routes/auditLogs.js";
 import notificationRoutes from "./routes/notifications.js";
 import dashboardRoutes from "./routes/dashboard.js";
+import adminRoutes from "./routes/admin.js";
 import { notFound, errorHandler } from "./middleware/error.js";
 
 const app = express();
@@ -87,6 +88,7 @@ app.use("/api/settings", settingRoutes);
 app.use("/api/audit-logs", auditRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/admin", adminRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
