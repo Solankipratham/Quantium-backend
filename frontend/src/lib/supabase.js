@@ -27,6 +27,8 @@ function createFallbackClient() {
   const getToken = () => localStorage.getItem("quantum_token") || "";
 
   const apiBaseUrl = import.meta.env.VITE_API_URL || "https://quantium-backend.onrender.com";
+  const REQUEST_TIMEOUT = 15000;
+
   const api = async (path, opts = {}) => {
     const token = getToken();
     const headers = { ...opts.headers };
@@ -34,10 +36,34 @@ function createFallbackClient() {
     if (opts.body && typeof opts.body === "string") {
       headers["Content-Type"] = "application/json";
     }
-    const res = await fetch(`${apiBaseUrl}${path}`, { ...opts, headers });
-    const data = await res.json().catch(() => null);
-    if (!res.ok) throw new Error(data?.message || `Request failed ${res.status}`);
-    return data;
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+
+    try {
+      const res = await fetch(`${apiBaseUrl}${path}`, {
+        ...opts,
+        headers,
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.message || `Request failed ${res.status}`);
+      return data;
+    } catch (e) {
+      clearTimeout(timeoutId);
+      if (e.name === "AbortError") {
+        throw new Error(
+          "Request timed out. Please check your connection and try again."
+        );
+      }
+      if (e.message === "Failed to fetch" || e.message === "NetworkError") {
+        throw new Error(
+          "Unable to connect to the server. Please check your internet connection."
+        );
+      }
+      throw e;
+    }
   };
 
   const endpointMap = {

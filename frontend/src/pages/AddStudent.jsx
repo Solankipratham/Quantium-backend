@@ -7,8 +7,8 @@ import { User, BookOpen, Wallet, ArrowLeft } from "lucide-react";
 export default function AddStudent() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
-    name: "", studentId: "", dob: "", gender: "", phone: "", parentName: "", parentPhone: "", email: "", address: "", photo: "",
-    course: "Class 10", subject: "", batch: "Class 10 — Evening", joiningDate: new Date().toISOString().slice(0, 10), teacher: "",
+    name: "", studentId: "", dob: "", gender: "", phone: "", parentName: "", parentPhone: "", email: "", address: "",
+    course: "Class 10", subject: "", batch: "Morning", joiningDate: new Date().toISOString().slice(0, 10), teacher: "",
     totalFee: "24000", monthlyFee: "2000", admissionFee: "1000", discount: "0", paymentPlan: "Monthly", firstDueDate: "", monthlyDueDate: "10"
   });
   const [error, setError] = useState("");
@@ -21,7 +21,7 @@ export default function AddStudent() {
     setError("");
     try {
       const r = await api("/api/students", { method: "POST", body: form });
-      navigate(`/students/${r.student.id}`);
+      navigate(`/admin/students/${r.student.id}`);
     } catch (err) {
       setError(err.message);
     } finally { setSaving(false); }
@@ -60,7 +60,6 @@ export default function AddStudent() {
               <div className="min-w-0"><Input label="Parent / Guardian Name" value={form.parentName} onChange={set("parentName")} placeholder="Rajesh Sharma" /></div>
               <div className="min-w-0"><Input label="Parent Phone" value={form.parentPhone} onChange={set("parentPhone")} placeholder="9812345671" /></div>
               <div className="min-w-0"><Input label="Email" type="email" value={form.email} onChange={set("email")} placeholder="rahul@gmail.com" /></div>
-              <div className="min-w-0 sm:col-span-2"><Input label="Student Photo URL (optional)" value={form.photo} onChange={set("photo")} placeholder="https://.../photo.jpg" /></div>
               <div className="sm:col-span-2 min-w-0"><Textarea label="Address" value={form.address} onChange={set("address")} placeholder="Full address" /></div>
             </div>
           </div>
@@ -78,9 +77,9 @@ export default function AddStudent() {
           </div>
           <div className="p-5">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="min-w-0"><Select label="Course *" value={form.course} onChange={set("course")}><option>Class 9</option><option>Class 10</option><option>Class 11</option><option>Class 12</option></Select></div>
-              <div className="min-w-0"><Input label="Subject" value={form.subject} onChange={set("subject")} placeholder="Mathematics & Science" /></div>
-              <div className="min-w-0"><Select label="Batch *" value={form.batch} onChange={set("batch")}><option>Class 10 — Morning</option><option>Class 10 — Evening</option><option>Class 11 — Morning</option><option>Class 11 — Evening</option><option>Class 12 — Morning</option><option>Class 12 — Evening</option></Select></div>
+              <div className="min-w-0"><Select label="Course *" value={form.course} onChange={set("course")} required><option>Nursery</option><option>LKG</option><option>UKG</option><option>Class 1</option><option>Class 2</option><option>Class 3</option><option>Class 4</option><option>Class 5</option><option>Class 6</option><option>Class 7</option><option>Class 8</option><option>Class 9</option><option>Class 10</option><option>Class 11</option><option>Class 12</option></Select></div>
+              <div className="min-w-0"><Input label="Subject" value={form.subject} onChange={set("subject")} placeholder="e.g. Mathematics, Science, English" /></div>
+              <div className="min-w-0"><Select label="Batch *" value={form.batch} onChange={set("batch")} required><option>Morning</option><option>Evening</option></Select></div>
               <div className="min-w-0"><Input label="Teacher" value={form.teacher} onChange={set("teacher")} placeholder="Mr. Rajesh Iyer" /></div>
               <div className="min-w-0 sm:col-span-2"><Input label="Joining Date" type="date" value={form.joiningDate} onChange={set("joiningDate")} /></div>
             </div>

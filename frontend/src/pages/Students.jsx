@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, Plus, Trash2, Eye, CreditCard, FileDown, Users, UserCheck, UserX, Clock } from "lucide-react";
+import { Search, Plus, Trash2, Eye, CreditCard, FileDown, Users, UserCheck, UserX, Clock, AlertTriangle } from "lucide-react";
 import { api, formatINR, formatDate } from "../api/client.js";
-import { Card, Button, Input, Select, EmptyState, LoadingState, PageHeader, StatCard, Avatar, Badge } from "../components/ui.jsx";
+import { useRefresh } from "../context/RefreshContext.jsx";
+import { Card, Button, Input, Select, EmptyState, LoadingState, PageHeader, StatCard, Avatar, Badge, Modal } from "../components/ui.jsx";
 import FeeStatusBadge from "../components/FeeStatusBadge.jsx";
 import PaymentModal from "../components/PaymentModal.jsx";
 import { downloadStudentPDF } from "../utils/pdf.js";
@@ -18,6 +19,10 @@ export default function Students() {
   const [batches, setBatches] = useState([]);
   const [courses, setCourses] = useState([]);
   const [payFor, setPayFor] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+  const { triggerRefresh } = useRefresh();
 
   const load = () => {
     setLoading(true);
@@ -42,10 +47,20 @@ export default function Students() {
     return () => clearTimeout(t);
   }, [q, batch, course, status, sort]); // eslint-disable-line
 
-  const removeStudent = async (s) => {
-    if (!confirm(`Delete ${s.name}? This will also remove all payments.`)) return;
-    await api(`/api/students/${s.id}`, { method: "DELETE" });
-    load();
+  const removeStudent = async () => {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    setDeleteError("");
+    try {
+      await api(`/api/students/${deleteTarget.id}`, { method: "DELETE" });
+      setDeleteTarget(null);
+      triggerRefresh();
+      load();
+    } catch (e) {
+      setDeleteError(e.message || "Failed to move student to Recycle Bin. Please try again.");
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   const downloadPDF = async (s) => {
@@ -167,7 +182,7 @@ export default function Students() {
                       <td className="px-4 py-3.5"><FeeStatusBadge status={s.status} /></td>
                       <td className="px-5 py-3.5">
                         <div className="flex justify-end gap-1.5">
-                          <Link to={`/students/${s.id}`} className="w-8 h-8 grid place-items-center rounded-lg border border-slate-200 text-slate-500 hover:bg-brand-50 hover:text-brand-600 hover:border-brand-200 transition-all duration-150">
+                          <Link to={`/admin/students/${s.id}`} className="w-8 h-8 grid place-items-center rounded-lg border border-slate-200 text-slate-500 hover:bg-brand-50 hover:text-brand-600 hover:border-brand-200 transition-all duration-150">
                             <Eye className="w-3.5 h-3.5" />
                           </Link>
                           <button onClick={() => setPayFor(s)} className="w-8 h-8 grid place-items-center rounded-lg border border-slate-200 text-slate-500 hover:bg-success-50 hover:text-success-600 hover:border-success-200 transition-all duration-150">
@@ -176,7 +191,7 @@ export default function Students() {
                           <button onClick={() => downloadPDF(s)} className="w-8 h-8 grid place-items-center rounded-lg border border-slate-200 text-slate-500 hover:bg-info-50 hover:text-info-600 hover:border-info-200 transition-all duration-150" title="Download PDF">
                             <FileDown className="w-3.5 h-3.5" />
                           </button>
-                          <button onClick={() => removeStudent(s)} className="w-8 h-8 grid place-items-center rounded-lg border border-slate-200 text-slate-500 hover:bg-danger-50 hover:text-danger-600 hover:border-danger-200 transition-all duration-150">
+                          <button onClick={() => { setDeleteTarget(s); setDeleteError(""); }} className="w-8 h-8 grid place-items-center rounded-lg border border-slate-200 text-slate-500 hover:bg-danger-50 hover:text-danger-600 hover:border-danger-200 transition-all duration-150">
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
@@ -217,7 +232,7 @@ export default function Students() {
                   </div>
                 </div>
                 <div className="flex gap-2 mt-4">
-                  <Link to={`/students/${s.id}`} className="flex-1">
+                  <Link to={`/admin/students/${s.id}`} className="flex-1">
                     <Button variant="secondary" className="w-full text-xs"><Eye className="w-3.5 h-3.5 mr-1.5" />View</Button>
                   </Link>
                   <Button className="flex-1 text-xs" onClick={() => setPayFor(s)}><CreditCard className="w-3.5 h-3.5 mr-1.5" />Record Payment</Button>
@@ -229,6 +244,31 @@ export default function Students() {
       )}
 
       <PaymentModal open={!!payFor} onClose={() => setPayFor(null)} student={payFor} onSuccess={load} />
+
+      {/* Delete Confirmation Modal */}
+      <Modal open={!!deleteTarget} onClose={() => { if (!deleteLoading) setDeleteTarget(null); }} title="Move Student to Recycle Bin" width="max-w-md">
+        <div className="space-y-4">
+          <div className="flex items-start gap-3 p-3 rounded-xl bg-warning-50 border border-warning-200">
+            <AlertTriangle className="w-5 h-5 text-warning-600 shrink-0 mt-0.5" />
+            <div>
+              <div className="text-sm font-semibold text-warning-700">This student will be hidden from all active pages</div>
+              <div className="text-xs text-warning-600 mt-1">You can restore the student later from the Recycle Bin.</div>
+            </div>
+          </div>
+          <p className="text-sm text-slate-600">
+            Move <span className="font-semibold text-slate-900">{deleteTarget?.name}</span> ({deleteTarget?.studentId}) to the Recycle Bin?
+          </p>
+          {deleteError ? (
+            <div className="rounded-xl bg-danger-50 border border-danger-200 text-danger-700 text-sm p-3 font-medium">{deleteError}</div>
+          ) : null}
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="ghost" onClick={() => setDeleteTarget(null)} disabled={deleteLoading}>Cancel</Button>
+            <Button variant="danger" onClick={removeStudent} disabled={deleteLoading}>
+              <Trash2 className="w-4 h-4 mr-2" />{deleteLoading ? "Moving..." : "Move to Recycle Bin"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -136,7 +136,7 @@ export default function CollectionsMonthly() {
         <div className="text-xs text-slate-500 mt-2">{formatINR(data?.collected || 0)} collected out of {formatINR(data?.expected || 0)} expected.</div>
       </Card>
 
-      <Card className="overflow-auto w-full min-w-0">
+      <Card className="overflow-hidden w-full min-w-0">
         <div className="px-5 py-3 border-b border-slate-100 text-sm font-semibold text-slate-700">
           Payments — {data?.label}
         </div>
@@ -145,47 +145,71 @@ export default function CollectionsMonthly() {
             <EmptyState title="No payments" description="No payments for this month / filter." icon={Wallet} />
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[680px]">
-              <thead>
-                <tr className="border-b border-slate-100">
-                  <th className="text-left px-5 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Student</th>
-                  <th className="text-left px-4 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Course / Batch</th>
-                  <th className="text-right px-4 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Amount</th>
-                  <th className="text-left px-4 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Method</th>
-                  <th className="text-left px-4 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Date</th>
-                  <th className="text-left px-5 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Receipt</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredPayments.map((p) => (
-                  <tr key={p.id} className="border-b border-slate-50 hover:bg-brand-50/30 transition-colors">
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-2.5">
-                        <Avatar name={p.studentName} size="sm" />
-                        <div className="min-w-0">
-                          <div className="font-medium text-slate-900 truncate">{p.studentName}</div>
-                          <div className="text-xs text-slate-400 font-mono">{p.studentId}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-1.5">
-                        <Badge variant="purple">{p.studentCourse}</Badge>
-                        <Badge variant="muted">{p.studentBatch}</Badge>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 text-right font-mono font-bold text-slate-900">{formatINR(p.amount)}</td>
-                    <td className="px-4 py-4">
-                      <Badge variant={p.method === "Cash" ? "success" : p.method === "UPI" ? "primary" : p.method === "Bank Transfer" ? "purple" : p.method === "Card" ? "info" : "muted"}>{p.method}</Badge>
-                    </td>
-                    <td className="px-4 py-4 text-sm text-slate-600">{formatDate(p.date)}</td>
-                    <td className="px-5 py-4 font-mono text-xs text-slate-500">{p.receiptNumber}</td>
+          <>
+            <div className="hidden lg:block overflow-x-auto">
+              <table className="w-full text-sm min-w-[680px]">
+                <thead>
+                  <tr className="border-b border-slate-100">
+                    <th className="text-left px-5 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Student</th>
+                    <th className="text-left px-4 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Course / Batch</th>
+                    <th className="text-right px-4 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Amount</th>
+                    <th className="text-left px-4 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Method</th>
+                    <th className="text-left px-4 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Date</th>
+                    <th className="text-left px-5 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Receipt</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {filteredPayments.map((p) => (
+                    <tr key={p.id} className="border-b border-slate-50 hover:bg-brand-50/30 transition-colors">
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-2.5">
+                          <Avatar name={p.studentName} size="sm" />
+                          <div className="min-w-0">
+                            <div className="font-medium text-slate-900 truncate">{p.studentName}</div>
+                            <div className="text-xs text-slate-400 font-mono">{p.studentId}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="flex items-center gap-1.5">
+                          <Badge variant="purple">{p.studentCourse}</Badge>
+                          <Badge variant="muted">{p.studentBatch}</Badge>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 text-right font-mono font-bold text-slate-900">{formatINR(p.amount)}</td>
+                      <td className="px-4 py-4">
+                        <Badge variant={p.method === "Cash" ? "success" : p.method === "UPI" ? "primary" : p.method === "Bank Transfer" ? "purple" : p.method === "Card" ? "info" : "muted"}>{p.method}</Badge>
+                      </td>
+                      <td className="px-4 py-4 text-sm text-slate-600">{formatDate(p.date)}</td>
+                      <td className="px-5 py-4 font-mono text-xs text-slate-500">{p.receiptNumber}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="lg:hidden grid gap-3 p-3">
+              {filteredPayments.map((p) => (
+                <div key={p.id} className="p-3.5 rounded-xl border border-slate-100 bg-white hover:shadow-card transition-shadow duration-200 min-w-0">
+                  <div className="flex items-start justify-between gap-2 min-w-0">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Avatar name={p.studentName} size="sm" />
+                      <div className="min-w-0">
+                        <div className="text-sm font-bold text-slate-900 truncate">{p.studentName}</div>
+                        <div className="text-xs font-mono text-slate-500 truncate">{p.studentId}</div>
+                      </div>
+                    </div>
+                    <div className="text-lg font-bold font-mono text-slate-900 shrink-0">{formatINR(p.amount)}</div>
+                  </div>
+                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                    <Badge variant={p.method === "Cash" ? "success" : p.method === "UPI" ? "primary" : "purple"}>{p.method}</Badge>
+                    <Badge variant="purple">{p.studentCourse}</Badge>
+                    <Badge variant="muted">{p.studentBatch}</Badge>
+                  </div>
+                  <div className="text-xs text-slate-500 mt-2">Date {formatDate(p.date)} · {p.receiptNumber}</div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </Card>
     </div>

@@ -45,12 +45,24 @@ export default function Login() {
 
     try {
       await login(email.trim().toLowerCase(), password);
-      navigate("/admin/dashboard");
+      navigate("/admin/dashboard", { replace: true });
     } catch (err) {
-      setError(
-        err.message ||
-          "Unable to sign in. Please check your credentials and try again."
-      );
+      const msg = err.message || "";
+      if (msg.includes("Invalid login credentials") || msg.includes("invalid_credentials")) {
+        setError("Invalid email or password. Please try again.");
+      } else if (msg.includes("Email not confirmed")) {
+        setError("Please confirm your email before signing in.");
+      } else if (msg.includes("timed out")) {
+        setError("Login is taking longer than expected. Please check your connection and try again.");
+      } else if (msg.includes("Failed to fetch") || msg.includes("NetworkError") || msg.includes("Unable to connect")) {
+        setError("Unable to connect to the server. Please check your internet connection.");
+      } else if (msg.includes("429") || msg.includes("rate limit")) {
+        setError("Too many login attempts. Please wait a moment and try again.");
+      } else if (msg.includes("Access denied")) {
+        setError("Access denied. Only the admin account is authorized.");
+      } else {
+        setError(msg || "Unable to sign in. Please check your credentials and try again.");
+      }
     } finally {
       setLoading(false);
     }

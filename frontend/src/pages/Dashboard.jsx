@@ -6,6 +6,7 @@ import {
   Plus, Receipt, FileBarChart, CheckCircle,
 } from "lucide-react";
 import { api, formatINR, formatDate } from "../api/client.js";
+import { useRefresh } from "../context/RefreshContext.jsx";
 import {
   Card, Button, Badge, Avatar, EmptyState, LoadingState,
   StatCard, StatSkeleton, PageHeader,
@@ -17,6 +18,7 @@ export default function Dashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [payOpen, setPayOpen] = useState(false);
+  const { refreshCount } = useRefresh();
 
   const load = () => {
     setLoading(true);
@@ -25,7 +27,7 @@ export default function Dashboard() {
       .catch(() => {})
       .finally(() => setLoading(false));
   };
-  useEffect(load, []);
+  useEffect(load, [refreshCount]);
 
   if (loading) {
     return (

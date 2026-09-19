@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Pencil, Trash2, CreditCard, MessageCircle, FileDown, Send, Calendar, Phone, BookOpen, GraduationCap, User } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, CreditCard, MessageCircle, FileDown, Send, Calendar, Phone, BookOpen, GraduationCap, User, AlertTriangle } from "lucide-react";
 import { api, formatINR, formatDate } from "../api/client.js";
 import { Card, Button, LoadingState, EmptyState, Badge, Input, Select, Label, Textarea, Modal, PageHeader, Avatar, ProgressBar, Tabs, StatCard } from "../components/ui.jsx";
 import FeeStatusBadge from "../components/FeeStatusBadge.jsx";
@@ -18,6 +18,8 @@ export default function StudentProfile() {
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState(null);
   const [activeTab, setActiveTab] = useState("overview");
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -51,9 +53,14 @@ export default function StudentProfile() {
   };
 
   const remove = async () => {
-    if (!confirm(`Delete ${s.name}?`)) return;
-    await api(`/api/students/${id}`, { method: "DELETE" });
-    navigate("/students");
+    setDeleteLoading(true);
+    try {
+      await api(`/api/students/${id}`, { method: "DELETE" });
+      setDeleteOpen(false);
+      navigate("/admin/students");
+    } catch (e) {
+      setDeleteLoading(false);
+    }
   };
 
   const reminderText = `Hello, this is a reminder from Quantum Coaching regarding the pending fee of ${formatINR(s.pending)} for ${s.name} (${s.studentId}). Next due: ${formatDate(s.nextDueDate)}. Please complete the payment at your earliest convenience.`;
@@ -95,7 +102,7 @@ export default function StudentProfile() {
           <Button variant="ghost" onClick={downloadPDF} className="w-full sm:w-auto"><FileDown className="w-4 h-4 mr-2" />Download PDF</Button>
           <Button variant="secondary" onClick={() => setEditOpen(true)} className="w-full sm:w-auto"><Pencil className="w-4 h-4 mr-2" />Edit</Button>
           <Button onClick={() => setPayOpen(true)} className="w-full sm:w-auto"><CreditCard className="w-4 h-4 mr-2" />Record Payment</Button>
-          <Button variant="danger-outline" onClick={remove} className="w-full sm:w-auto"><Trash2 className="w-4 h-4 mr-2" />Delete</Button>
+          <Button variant="danger-outline" onClick={() => setDeleteOpen(true)} className="w-full sm:w-auto"><Trash2 className="w-4 h-4 mr-2" />Delete</Button>
         </div>
       </Card>
 
@@ -353,8 +360,8 @@ export default function StudentProfile() {
               <div className="min-w-0"><Label>Phone</Label><Input value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} /></div>
               <div className="min-w-0"><Label>Parent</Label><Input value={editForm.parentName} onChange={(e) => setEditForm({ ...editForm, parentName: e.target.value })} /></div>
               <div className="min-w-0"><Label>Parent Phone</Label><Input value={editForm.parentPhone} onChange={(e) => setEditForm({ ...editForm, parentPhone: e.target.value })} /></div>
-              <div className="min-w-0"><Label>Course</Label><Input value={editForm.course} onChange={(e) => setEditForm({ ...editForm, course: e.target.value })} /></div>
-              <div className="min-w-0"><Label>Batch</Label><Input value={editForm.batch} onChange={(e) => setEditForm({ ...editForm, batch: e.target.value })} /></div>
+              <div className="min-w-0"><Label>Course</Label><Select value={editForm.course} onChange={(e) => setEditForm({ ...editForm, course: e.target.value })}><option>Nursery</option><option>LKG</option><option>UKG</option><option>Class 1</option><option>Class 2</option><option>Class 3</option><option>Class 4</option><option>Class 5</option><option>Class 6</option><option>Class 7</option><option>Class 8</option><option>Class 9</option><option>Class 10</option><option>Class 11</option><option>Class 12</option></Select></div>
+              <div className="min-w-0"><Label>Batch</Label><Select value={editForm.batch} onChange={(e) => setEditForm({ ...editForm, batch: e.target.value })}><option>Morning</option><option>Evening</option></Select></div>
               <div className="min-w-0"><Label>Total Fee</Label><Input type="number" value={editForm.totalFee} onChange={(e) => setEditForm({ ...editForm, totalFee: e.target.value })} /></div>
               <div className="min-w-0"><Label>Discount</Label><Input type="number" value={editForm.discount} onChange={(e) => setEditForm({ ...editForm, discount: e.target.value })} /></div>
               <div className="min-w-0"><Label>Monthly Fee</Label><Input type="number" value={editForm.monthlyFee} onChange={(e) => setEditForm({ ...editForm, monthlyFee: e.target.value })} /></div>
@@ -366,6 +373,28 @@ export default function StudentProfile() {
             </div>
           </form>
         ) : null}
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal open={deleteOpen} onClose={() => setDeleteOpen(false)} title="Delete Student" width="max-w-md">
+        <div className="space-y-4">
+          <div className="flex items-start gap-3 p-3 rounded-xl bg-warning-50 border border-warning-200">
+            <AlertTriangle className="w-5 h-5 text-warning-600 shrink-0 mt-0.5" />
+            <div>
+              <div className="text-sm font-semibold text-warning-700">Student will be moved to Recycle Bin</div>
+              <div className="text-xs text-warning-600 mt-1">You can restore the student later from the Recycle Bin if needed.</div>
+            </div>
+          </div>
+          <p className="text-sm text-slate-600">
+            Are you sure you want to delete <span className="font-semibold text-slate-900">{s.name}</span> ({s.studentId})?
+          </p>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="ghost" onClick={() => setDeleteOpen(false)} disabled={deleteLoading}>Cancel</Button>
+            <Button variant="danger" onClick={remove} disabled={deleteLoading}>
+              <Trash2 className="w-4 h-4 mr-2" />{deleteLoading ? "Deleting..." : "Delete Student"}
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

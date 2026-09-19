@@ -111,7 +111,7 @@ export default function BatchDetail() {
                     <div className="flex items-center gap-3">
                       <Avatar name={s.name} size="sm" />
                       <div className="min-w-0">
-                        <Link to={`/students/${s.id}`} className="font-medium text-slate-900 hover:text-brand-600 hover:underline block truncate">{s.name}</Link>
+                        <Link to={`/admin/students/${s.id}`} className="font-medium text-slate-900 hover:text-brand-600 hover:underline block truncate">{s.name}</Link>
                         <div className="text-xs text-slate-400 font-mono">{s.studentId}</div>
                       </div>
                     </div>
@@ -137,7 +137,7 @@ export default function BatchDetail() {
                   <div className="flex items-center gap-3 min-w-0">
                     <Avatar name={s.name} size="md" />
                     <div className="min-w-0">
-                      <Link to={`/students/${s.id}`} className="font-medium hover:underline text-sm truncate block text-slate-900">{s.name}</Link>
+                      <Link to={`/admin/students/${s.id}`} className="font-medium hover:underline text-sm truncate block text-slate-900">{s.name}</Link>
                       <div className="text-xs text-slate-400 font-mono truncate">{s.studentId}</div>
                       <div className="text-xs text-slate-500 mt-1">Due {formatDate(s.nextDueDate)}</div>
                     </div>

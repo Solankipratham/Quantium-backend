@@ -118,10 +118,10 @@ export default function FeeStructure() {
           <div className="min-w-0">
             <Label>Course</Label>
             <Select value={form.course} onChange={(e) => setForm({ ...form, course: e.target.value })}>
-              <option>Class 9</option>
-              <option>Class 10</option>
-              <option>Class 11</option>
-              <option>Class 12</option>
+              <option>Nursery</option><option>LKG</option><option>UKG</option>
+              <option>Class 1</option><option>Class 2</option><option>Class 3</option><option>Class 4</option><option>Class 5</option>
+              <option>Class 6</option><option>Class 7</option><option>Class 8</option><option>Class 9</option><option>Class 10</option>
+              <option>Class 11</option><option>Class 12</option>
             </Select>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full min-w-0">

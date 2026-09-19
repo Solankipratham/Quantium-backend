@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext.jsx";
+import { RefreshProvider } from "./context/RefreshContext.jsx";
 import { ToastProvider } from "./components/ui.jsx";
 import { Layout } from "./components/Layout.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
@@ -31,9 +32,10 @@ export default function App() {
   return (
     <ToastProvider>
       <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/admin/login" element={<Login />} />
+        <RefreshProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/admin/login" element={<Login />} />
             <Route path="/login" element={<Navigate to="/admin/login" replace />} />
             <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
 
@@ -62,7 +64,8 @@ export default function App() {
             <Route path="*" element={<UnderDevelopment />} />
           </Routes>
         </BrowserRouter>
-      </AuthProvider>
-    </ToastProvider>
-  );
+      </RefreshProvider>
+    </AuthProvider>
+  </ToastProvider>
+);
 }

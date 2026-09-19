@@ -34,6 +34,10 @@ export default function PendingFees() {
   if (!data) return <div className="text-sm text-slate-500">Failed to load.</div>;
 
   const students = data.students || [];
+
+  const filterCourses = [...new Set(students.map((s) => s.course).filter(Boolean))];
+  const filterBatches = [...new Set(students.map((s) => s.batch).filter(Boolean))];
+
   const filteredStudents = students.filter((s) => {
     if (search) {
       const q = search.toLowerCase();
@@ -103,9 +107,11 @@ export default function PendingFees() {
           </div>
           <Select value={filterCourse} onChange={(e) => setFilterCourse(e.target.value)} className="w-full sm:w-[150px]">
             <option value="all">All Courses</option>
+            {filterCourses.map((c) => <option key={c} value={c}>{c}</option>)}
           </Select>
           <Select value={filterBatch} onChange={(e) => setFilterBatch(e.target.value)} className="w-full sm:w-[150px]">
             <option value="all">All Batches</option>
+            {filterBatches.map((b) => <option key={b} value={b}>{b}</option>)}
           </Select>
           <Select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="w-full sm:w-[150px]">
             <option value="all">All Status</option>
@@ -170,7 +176,7 @@ export default function PendingFees() {
                       <td className="px-4 py-4">{statusBadge(cur?.status || s.status)}</td>
                       <td className="px-5 py-4">
                         <div className="flex justify-end gap-2">
-                          <Link to={`/students/${s.id}`}>
+                          <Link to={`/admin/students/${s.id}`}>
                             <Button variant="secondary" size="sm">View</Button>
                           </Link>
                           <Button size="sm" variant="primary" onClick={() => setPayFor(s)}>Record Payment</Button>
@@ -220,7 +226,7 @@ export default function PendingFees() {
                   </div>
 
                   <div className="flex flex-col sm:flex-row gap-2 mt-4 w-full">
-                    <Link to={`/students/${s.id}`} className="flex-1 min-w-0">
+                    <Link to={`/admin/students/${s.id}`} className="flex-1 min-w-0">
                       <Button variant="secondary" className="w-full">View Details</Button>
                     </Link>
                     <Button className="flex-1" variant="primary" onClick={() => setPayFor(s)}>Record Payment</Button>

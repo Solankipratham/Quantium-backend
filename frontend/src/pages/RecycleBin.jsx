@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, formatDate } from "../api/client.js";
-import { Card, Button, Input, LoadingState, EmptyState, Badge, Avatar, PageHeader, StatCard } from "../components/ui.jsx";
+import { Card, Button, Input, LoadingState, EmptyState, Badge, Avatar, PageHeader, Modal } from "../components/ui.jsx";
 import { Trash2, RotateCcw, Search, AlertTriangle, Clock, UserX } from "lucide-react";
 
 export default function RecycleBin() {
@@ -8,6 +8,9 @@ export default function RecycleBin() {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [error, setError] = useState("");
+  const [restoreTarget, setRestoreTarget] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -23,17 +26,26 @@ export default function RecycleBin() {
   useEffect(() => { load(); }, []);
   useEffect(() => { const t = setTimeout(load, 300); return () => clearTimeout(t); }, [q]);
 
-  const restore = async (s) => {
-    if (!confirm(`Restore ${s.name} (${s.studentId})?`)) return;
-    await api(`/api/students/${s.id}/restore`, { method: "POST" });
-    load();
+  const confirmRestore = async () => {
+    if (!restoreTarget) return;
+    setActionLoading(true);
+    try {
+      await api(`/api/students/${restoreTarget.id}/restore`, { method: "POST" });
+      setRestoreTarget(null);
+      load();
+    } catch (e) { setError(e.message); }
+    finally { setActionLoading(false); }
   };
 
-  const permanentDelete = async (s) => {
-    if (!confirm(`WARNING\n\nThis will permanently delete ${s.name} (${s.studentId}) and all associated payments.\n\nThis cannot be undone.\n\n[Cancel] to keep, [OK] to permanently delete.`)) return;
-    if (!confirm(`Final confirmation: Permanently delete ${s.name}?`)) return;
-    await api(`/api/students/${s.id}/permanent`, { method: "DELETE" });
-    load();
+  const confirmPermanentDelete = async () => {
+    if (!deleteTarget) return;
+    setActionLoading(true);
+    try {
+      await api(`/api/students/${deleteTarget.id}/permanent`, { method: "DELETE" });
+      setDeleteTarget(null);
+      load();
+    } catch (e) { setError(e.message); }
+    finally { setActionLoading(false); }
   };
 
   return (
@@ -104,10 +116,10 @@ export default function RecycleBin() {
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex justify-end gap-2">
-                        <Button size="sm" variant="success-outline" onClick={() => restore(s)}>
+                        <Button size="sm" variant="success-outline" onClick={() => setRestoreTarget(s)}>
                           <RotateCcw className="w-3.5 h-3.5 mr-1" />Restore
                         </Button>
-                        <Button size="sm" variant="danger-outline" onClick={() => permanentDelete(s)}>
+                        <Button size="sm" variant="danger-outline" onClick={() => setDeleteTarget(s)}>
                           <AlertTriangle className="w-3.5 h-3.5 mr-1" />Delete
                         </Button>
                       </div>
@@ -137,10 +149,10 @@ export default function RecycleBin() {
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2 mt-4 w-full">
-                  <Button className="flex-1" size="sm" variant="success-outline" onClick={() => restore(s)}>
+                  <Button className="flex-1" size="sm" variant="success-outline" onClick={() => setRestoreTarget(s)}>
                     <RotateCcw className="w-3.5 h-3.5 mr-1" />Restore
                   </Button>
-                  <Button className="flex-1" variant="danger-outline" size="sm" onClick={() => permanentDelete(s)}>
+                  <Button className="flex-1" variant="danger-outline" size="sm" onClick={() => setDeleteTarget(s)}>
                     <AlertTriangle className="w-3.5 h-3.5 mr-1" />Delete
                   </Button>
                 </div>
@@ -149,6 +161,46 @@ export default function RecycleBin() {
           </div>
         </>
       )}
+
+      {/* Restore Confirmation Modal */}
+      <Modal open={!!restoreTarget} onClose={() => setRestoreTarget(null)} title="Restore Student" width="max-w-md">
+        <div className="space-y-4">
+          <p className="text-sm text-slate-600">
+            Are you sure you want to restore <span className="font-semibold text-slate-900">{restoreTarget?.name}</span> ({restoreTarget?.studentId})?
+          </p>
+          <p className="text-sm text-slate-500">
+            The student will reappear in the active student list and all associated data will be restored.
+          </p>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="ghost" onClick={() => setRestoreTarget(null)} disabled={actionLoading}>Cancel</Button>
+            <Button variant="success" onClick={confirmRestore} disabled={actionLoading}>
+              <RotateCcw className="w-4 h-4 mr-2" />{actionLoading ? "Restoring..." : "Restore Student"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Permanent Delete Confirmation Modal */}
+      <Modal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Permanently Delete Student" width="max-w-md">
+        <div className="space-y-4">
+          <div className="flex items-start gap-3 p-3 rounded-xl bg-danger-50 border border-danger-200">
+            <AlertTriangle className="w-5 h-5 text-danger-600 shrink-0 mt-0.5" />
+            <div>
+              <div className="text-sm font-semibold text-danger-700">This action cannot be undone</div>
+              <div className="text-xs text-danger-600 mt-1">All student data and payment records will be permanently removed.</div>
+            </div>
+          </div>
+          <p className="text-sm text-slate-600">
+            You are about to permanently delete <span className="font-semibold text-slate-900">{deleteTarget?.name}</span> ({deleteTarget?.studentId}) and all associated payment records.
+          </p>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="ghost" onClick={() => setDeleteTarget(null)} disabled={actionLoading}>Cancel</Button>
+            <Button variant="danger" onClick={confirmPermanentDelete} disabled={actionLoading}>
+              <Trash2 className="w-4 h-4 mr-2" />{actionLoading ? "Deleting..." : "Permanently Delete"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
