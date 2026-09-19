@@ -66,7 +66,7 @@ router.delete("/plans/:id", authorize("ADMIN"), async (req, res, next) => {
 // GET /api/fees/pending — the most important page (5-day warning + monthly logic)
 router.get("/pending", async (req, res, next) => {
   try {
-    const enriched = await listEnriched({}, null);
+    const enriched = await listEnriched({ is_deleted: { $ne: true } }, null);
     // enrich with monthly due-soon logic
     const nowKey = new Date().toISOString().slice(0, 7);
     const pendingStudents = enriched.filter((s) => {
@@ -104,7 +104,7 @@ router.get("/pending", async (req, res, next) => {
 // GET /api/fees — summary for all students (alias for overview)
 router.get("/", async (req, res, next) => {
   try {
-    const enriched = await listEnriched({}, null);
+    const enriched = await listEnriched({ is_deleted: { $ne: true } }, null);
     res.json({
       total: enriched.length,
       paid: enriched.filter((s) => s.status === "PAID").length,
@@ -145,7 +145,7 @@ router.get("/student/:studentId", async (req, res, next) => {
 // GET /api/fees/overview — statuses distribution
 router.get("/overview", async (req, res, next) => {
   try {
-    const enriched = await listEnriched({}, null);
+    const enriched = await listEnriched({ is_deleted: { $ne: true } }, null);
     res.json({
       paid: enriched.filter((s) => s.status === "PAID").length,
       partial: enriched.filter((s) => s.status === "PARTIAL").length,

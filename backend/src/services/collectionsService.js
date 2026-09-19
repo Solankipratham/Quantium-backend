@@ -117,7 +117,7 @@ export async function getDailySeries(days = 7) {
 
 export async function getStudentGrowth(months = 6) {
   const store = await getStore();
-  const students = await store.model("Student").find({}, { joiningDate: -1 });
+  const students = await store.model("Student").find({ is_deleted: { $ne: true } }, { joiningDate: -1 });
   const series = [];
   const now = new Date();
   let cumulative = 0;
@@ -135,7 +135,7 @@ export async function getBatchWiseCollection() {
   const store = await getStore();
   const [batches, students] = await Promise.all([
     store.model("Batch").find({}, null),
-    store.model("Student").find({}, null)
+    store.model("Student").find({ is_deleted: { $ne: true } }, null)
   ]);
   const enriched = await Promise.all(students.map((s) => enrichStudent(s)));
   return batches.map((b) => {

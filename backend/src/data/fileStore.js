@@ -24,7 +24,6 @@ const EMPTY = {
 };
 
 let state = null;
-let saveTimer = null;
 
 function deepClone(obj) {
   return obj == null ? obj : JSON.parse(JSON.stringify(obj));
@@ -50,14 +49,11 @@ export function loadState() {
 export function persist() {
   if (!state) return;
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  if (saveTimer) clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
-    try {
-      fs.writeFileSync(dbFile, JSON.stringify(state, null, 2), "utf8");
-    } catch (e) {
-      console.error("[fileStore] persist error:", e.message);
-    }
-  }, 250);
+  try {
+    fs.writeFileSync(dbFile, JSON.stringify(state, null, 2), "utf8");
+  } catch (e) {
+    console.error("[fileStore] persist error:", e.message);
+  }
 }
 
 function collectionName(model) {

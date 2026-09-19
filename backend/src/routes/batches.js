@@ -12,7 +12,7 @@ router.get("/", async (req, res, next) => {
   try {
     const store = await getStore();
     const batches = await store.model("Batch").find({}, null);
-    const students = await store.model("Student").find({}, null);
+    const students = await store.model("Student").find({ is_deleted: { $ne: true } }, null);
     const enriched = await Promise.all(students.map((s) => enrichStudent(s)));
     res.json({ batches: computeBatchesSummary(batches, enriched) });
   } catch (e) { next(e); }
@@ -23,7 +23,7 @@ router.get("/:id", async (req, res, next) => {
     const store = await getStore();
     const batch = await store.model("Batch").findById(req.params.id);
     if (!batch) return res.status(404).json({ message: "Batch not found." });
-    const students = await store.model("Student").find({}, { name: 1 });
+    const students = await store.model("Student").find({ is_deleted: { $ne: true } }, { name: 1 });
     const members = [];
     for (const s of students) {
       if (s.batch === batch.name) members.push(await enrichStudent(s));

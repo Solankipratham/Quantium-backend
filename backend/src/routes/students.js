@@ -27,7 +27,7 @@ router.post("/:id/restore", async (req, res, next) => {
     const student = await store.model("Student").findById(req.params.id);
     if (!student) return res.status(404).json({ message: "Student not found." });
     if (!student.is_deleted) return res.status(400).json({ message: "Student is not in recycle bin." });
-    const updated = await store.model("Student").updateById(req.params.id, { is_deleted: false, deleted_at: null, deleted_by: "" });
+    const updated = await store.model("Student").updateById(req.params.id, { is_deleted: false, deleted_at: null, deleted_by: null });
     await writeAuditLog({ user: req.user, action: `Restored student ${updated.name} (${updated.studentId})`, entity: "Student", entityId: updated.id, ip: req.ip });
     res.json({ message: "Student restored.", student: updated });
   } catch (e) { next(e); }
@@ -86,16 +86,10 @@ router.get("/", async (req, res, next) => {
 router.get("/filters", async (req, res, next) => {
   try {
     const store = await getStore();
-    const [batches, courses] = await Promise.all([
-      store.model("Student").distinct("batch"),
-      store.model("Student").distinct("course")
-    ]);
-    let teachers = [];
-    try {
-      teachers = await store.model("Student").distinct("teacher");
-    } catch (teacherError) {
-      console.warn("GET /api/students/filters teacher filter unavailable:", teacherError.message);
-    }
+    const activeStudents = await store.model("Student").find({ is_deleted: { $ne: true } }, null);
+    const batches = [...new Set(activeStudents.map(s => s.batch).filter(Boolean))];
+    const courses = [...new Set(activeStudents.map(s => s.course).filter(Boolean))];
+    const teachers = [...new Set(activeStudents.map(s => s.teacher).filter(Boolean))];
     res.json({ success: true, batches, courses, teachers });
   } catch (e) {
     console.error("GET /api/students/filters error:", e);
@@ -229,7 +223,12 @@ router.delete("/:id", authorize("ADMIN"), async (req, res, next) => {
     const student = await store.model("Student").findById(req.params.id);
     if (!student) return res.status(404).json({ message: "Student not found." });
     if (student.is_deleted) return res.status(400).json({ message: "Already in recycle bin." });
-    await store.model("Student").updateById(req.params.id, { is_deleted: true, deleted_at: new Date().toISOString(), deleted_by: req.userId || "" });
+    const patch = { is_deleted: true, deleted_at: new Date().toISOString() };
+    const uid = req.userId || "";
+    if (uid && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uid)) {
+      patch.deleted_by = uid;
+    }
+    await store.model("Student").updateById(req.params.id, patch);
     await writeAuditLog({ user: req.user, action: `Moved student to recycle bin: ${student.name} (${student.studentId})`, entity: "Student", entityId: student.id, ip: req.ip });
     await pushNotification({ type: "student_removed", title: "Student moved to recycle bin", message: `${student.name} was moved to recycle bin.`, entity: "Student", entityId: student.id });
     res.json({ message: "Student moved to recycle bin." });

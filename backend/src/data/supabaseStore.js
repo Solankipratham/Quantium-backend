@@ -405,8 +405,13 @@ function makeModel(name) {
         markTableReady(supaTable);
         return fromSupabaseRow(name, inserted);
       } catch (e) {
-        console.warn(`[supabase] create(${supaTable}) error:`, e.message);
-        return fileStore.model(name).create(data);
+        const isTableMissing = e.message?.includes("does not exist") || e.code === "42P01" || e.message?.includes("relation") || e.message?.includes("table");
+        if (isTableMissing) {
+          console.warn(`[supabase] create(${supaTable}) table not found — using fileStore`);
+          return fileStore.model(name).create(data);
+        }
+        console.error(`[supabase] create(${supaTable}) FAILED:`, e.message);
+        throw e;
       }
     },
 
@@ -419,8 +424,13 @@ function makeModel(name) {
         markTableReady(supaTable);
         return fromSupabaseRow(name, data);
       } catch (e) {
-        console.warn(`[supabase] updateById(${supaTable}) error:`, e.message);
-        return fileStore.model(name).updateById(id, patch);
+        const isTableMissing = e.message?.includes("does not exist") || e.code === "42P01" || e.message?.includes("relation") || e.message?.includes("table");
+        if (isTableMissing) {
+          console.warn(`[supabase] updateById(${supaTable}) table not found — using fileStore`);
+          return fileStore.model(name).updateById(id, patch);
+        }
+        console.error(`[supabase] updateById(${supaTable}) FAILED:`, e.message);
+        throw e;
       }
     },
 
@@ -431,8 +441,13 @@ function makeModel(name) {
         markTableReady(supaTable);
         return fromSupabaseRow(name, data);
       } catch (e) {
-        console.warn(`[supabase] deleteById(${supaTable}) error:`, e.message);
-        return fileStore.model(name).deleteById(id);
+        const isTableMissing = e.message?.includes("does not exist") || e.code === "42P01" || e.message?.includes("relation") || e.message?.includes("table");
+        if (isTableMissing) {
+          console.warn(`[supabase] deleteById(${supaTable}) table not found — using fileStore`);
+          return fileStore.model(name).deleteById(id);
+        }
+        console.error(`[supabase] deleteById(${supaTable}) FAILED:`, e.message);
+        throw e;
       }
     },
 
@@ -448,8 +463,13 @@ function makeModel(name) {
         markTableReady(supaTable);
         return count || 0;
       } catch (e) {
-        console.warn(`[supabase] deleteMany(${supaTable}) error:`, e.message);
-        return fileStore.model(name).deleteMany(filter);
+        const isTableMissing = e.message?.includes("does not exist") || e.code === "42P01" || e.message?.includes("relation") || e.message?.includes("table");
+        if (isTableMissing) {
+          console.warn(`[supabase] deleteMany(${supaTable}) table not found — using fileStore`);
+          return fileStore.model(name).deleteMany(filter);
+        }
+        console.error(`[supabase] deleteMany(${supaTable}) FAILED:`, e.message);
+        throw e;
       }
     },
 

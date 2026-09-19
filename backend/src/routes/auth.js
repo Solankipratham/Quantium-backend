@@ -9,7 +9,7 @@ import { writeAuditLog } from "../services/activity.js";
 const router = Router();
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@quantum.in";
-const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || "$2a$10$0A/6j/EqElG3RvwF015tVO/kgi0D/ldzb6I2bgZIFjDVElO8Jfthm";
+const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || "$2a$10$MDcpcu0VUPQwsq4zJb9NO.Bhw4qR7ZIh2xDByQplZPm6lQe.1kxga";
 const ADMIN_NAME = process.env.ADMIN_NAME || "Admin";
 
 function signToken(user) {
